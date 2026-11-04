@@ -1,5 +1,5 @@
 'use client'
-import { Bot, FileText, Film, Image as ImageIcon, Mic, Sparkles, StickyNote } from 'lucide-react'
+import { Bot, FileText, Film, Image as ImageIcon, Mic, Smile, Sparkles, StickyNote } from 'lucide-react'
 import type { Message } from '@/types/api'
 import { mediaUrl } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -61,14 +61,19 @@ function MediaContent({ msg }: { msg: Message }) {
     )
   }
   if (msg.content_type === 'image' || msg.content_type === 'sticker') {
+    const figurinha = msg.content_type === 'sticker'
     return (
       <div className="flex flex-col gap-1">
         {src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={msg.content ?? 'imagem'} className="max-w-[240px] rounded-lg" />
+          <img src={src} alt={msg.content ?? (figurinha ? 'figurinha' : 'imagem')} className="max-w-[240px] rounded-lg" />
         ) : (
           <span className="opacity-70">
-            <RotuloMidia icone={ImageIcon}>Imagem</RotuloMidia>
+            {figurinha ? (
+              <RotuloMidia icone={Smile}>Figurinha</RotuloMidia>
+            ) : (
+              <RotuloMidia icone={ImageIcon}>Imagem</RotuloMidia>
+            )}
           </span>
         )}
         {msg.content && <span className="text-[13px]">{msg.content}</span>}
@@ -114,6 +119,18 @@ export default function MessageBubble({ msg }: { msg: Message }) {
 
   const isOutbound = msg.direction === 'outbound'
   const isMedia = msg.content_type !== 'text'
+
+  // Figurinha baixada vai sem bolha e menor, como no próprio WhatsApp: dentro do balão
+  // ela competia com foto de verdade. Sem arquivo, cai no balão comum com o rótulo.
+  if (msg.content_type === 'sticker' && msg.media_url) {
+    return (
+      <div className={cn('flex flex-col gap-0.5', isOutbound ? 'self-end items-end' : 'self-start items-start')}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={mediaUrl(msg.media_url)} alt="figurinha" className="w-[140px] h-auto" />
+        <span className="font-mono text-2xs tabular-nums text-faint">{formatMsgTime(msg.created_at)}</span>
+      </div>
+    )
+  }
   // Quem fala define a bolha: cliente à esquerda; atendente (azul) e bot (cinza-azulado)
   // à direita. O bot é da equipe, mas não é gente — por isso não leva o azul.
   const tipo = !isOutbound ? 'cliente' : msg.is_bot ? 'bot' : 'atendente'
