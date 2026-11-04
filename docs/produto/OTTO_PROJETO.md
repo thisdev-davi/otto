@@ -304,6 +304,7 @@ A mesma lógica protege **liberação** (`AND assigned_user_id = :user_id` — s
 | Nível 1 | Edição do texto das caixas pelo painel + simulador do roteiro | ✓ entregue |
 | Produção | Entrega verificada por ACK, ordem das bolhas, mídia nos dois cérebros, conta nova em fluxo | ✓ entregue |
 | Qualidade | Avaliação offline do agente (`evals/`), cobertura na CI, ESLint e teste no front | ✓ entregue |
+| Mídia e revisão | Banco de mídia recebida com exclusão, figurinha própria, apagar/editar mensagem (cliente e atendente) | ✓ entregue |
 | **Agora** | **Testes de `tasks/media.py`, visão de imagem, avaliação pós-atendimento** | em aberto (§3.3) |
 | Depois | Distribuição automática, merge de contatos, campanhas | Crescimento |
 

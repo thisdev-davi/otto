@@ -212,6 +212,15 @@ outra coluna, zero sobreposição.
   humano escreve não pode morar lá: gravado durante uma conversa ativa, ele some sem erro nenhum —
   a mesma corrida das regras 2 e 3, num campo que ninguém suspeita. Anotação da equipe é linha
   própria em `contact_notes`. **Não acrescente chave de escrita humana ao `profile`.**
+- **Mensagem nunca some do banco — nem mídia apagada, nem mensagem apagada.** Excluir no banco de
+  mídia (`services/midia_recebida.py`) apaga o ARQUIVO e marca `media.status = 'removed'` com quem
+  e quando; só mídia **recebida**, porque a enviada pela galeria reaproveita o mesmo arquivo em
+  várias conversas. Apagar ou editar, pelo cliente no WhatsApp ou pelo atendente no Otto, grava
+  `channel_metadata.revisao` (`services/revisao_mensagem.py`) e guarda o texto original. O
+  atendente só revisa a **própria** mensagem, nas janelas do WhatsApp (15 min editar, 48 h
+  apagar), e o canal vem **antes** do banco: se o WhatsApp recusar, nada muda aqui. Os eventos
+  `MESSAGES_DELETE`/`MESSAGES_EDITED` só chegam a conexões provisionadas depois deles —
+  conexão antiga precisa reconectar para o webhook ser reafirmado.
 - **SQL puro vs ORM:** ORM (SQLAlchemy) é o padrão; SQL explícito só onde concorrência exige (caso da captura). Não "simplificar" a captura para ORM.
 - **Async:** backend é async ponta a ponta (FastAPI async, SQLAlchemy AsyncSession, httpx).
 - **Tipagem:** type hints obrigatórios em código novo. O cliente TS do front (`frontend/lib/api.ts`, `frontend/types/api.ts`) é **escrito à mão** — não há codegen. Mudou schema Pydantic, atualize o tipo TS na mesma leva.

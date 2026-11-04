@@ -59,6 +59,7 @@ As regras abaixo estão no [`CLAUDE.md`](CLAUDE.md) como invariantes do projeto,
 - **Multi-tenant por linha, com defesa em profundidade.** `tenant_id` entra em toda query, e o tenant de um evento externo vem de um segredo comparado com `hmac.compare_digest`.
 - **Mídia não confiável.** O `Content-Type` servido passa por uma allow-list, a URL de mídia é assinada e de curta duração (sem JWT na query), e o download de avatar só aceita HTTPS para IP público, como proteção contra SSRF.
 - **Sem agendador.** Pré-reserva vencida e conversa inativa são resolvidas de forma preguiçosa, na leitura. O projeto não tem `celery beat` de propósito.
+- **Nada some do histórico.** Excluir uma foto no banco de mídia apaga o arquivo e deixa "mídia removida por Fulano" na conversa. Mensagem apagada ou editada (pelo cliente no WhatsApp ou pelo atendente no Otto) continua legível para a equipe, com o original guardado.
 - **Auditoria transacional.** Toda alteração em tabela com `tenant_id` registra ator, ação e resultado por trigger, na mesma transação, sem copiar conversa nem segredo.
 
 ## Avaliação do agente
