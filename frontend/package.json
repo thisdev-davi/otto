@@ -6,10 +6,10 @@
     "dev": "next dev --port 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
-    "check": "tsc --noEmit && npm run check:tokens && npm run check:contrast"
+    "check": "tsc --noEmit && npm run lint && npm run check:tokens && npm run check:contrast"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

@@ -279,7 +279,6 @@ export default function ReplyInput({ conversationId, disabled, onMessageSent }: 
               <span className="text-[12px] text-faint truncate">gravando…</span>
             </div>
           ) : (
-            // eslint-disable-next-line jsx-a11y/media-has-caption
             <audio
               src={gravador.previewUrl ?? undefined}
               controls
