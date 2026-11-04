@@ -3,10 +3,10 @@
 Este documento é o **conteúdo** que faz a agenda e a galeria funcionarem. Sem ele o código
 está no ar e o agente não usa nenhum dos dois.
 
-Para as regras gerais de como escrever persona e conhecimento, ver `GUIA-CONTEUDO-AGENTE.md`
+Para as regras gerais de como escrever persona e conhecimento, ver `docs/guias/GUIA-CONTEUDO-AGENTE.md`
 — aqui está só o que é específico deste derivado.
 
-**Onde ele mora: [`conteudo/persona.md`](conteudo/persona.md).** O arquivo já traz o texto
+**Onde ele mora: [`conteudo/persona.md`](../../conteudo/persona.md).** O arquivo já traz o texto
 inteiro, na ordem correta; preencha o que está entre `[ ]` e publique com:
 
 ```bash
@@ -32,7 +32,7 @@ O agente do Otto é uma chamada só, sem tool-calling — ele não "executa" nad
 faz é devolver um JSON, e o campo `captured` é um dicionário livre que o modelo preenche
 **a partir da persona**. O derivado lê duas chaves de lá e age
 (`app/services/salao_acoes.py`). Foi esta a escolha que evitou modificar
-`app/ai/llm.py`, o arquivo mais caro de manter divergente da base (`PLATAFORMA.md` §5).
+`app/ai/llm.py`, o arquivo mais caro de manter divergente da base (`docs/produto/PLATAFORMA.md` §5).
 
 Consequência prática: **tirar as instruções abaixo da persona desliga os dois recursos**,
 sem nenhum erro em log. O que continua funcionando sozinho é a *informação* de data e
@@ -47,7 +47,7 @@ quando ele *tenta*, não o que acontece.
 
 ## Persona — onde ela está
 
-O texto completo vive em [`conteudo/persona.md`](conteudo/persona.md), e é ele que o
+O texto completo vive em [`conteudo/persona.md`](../../conteudo/persona.md), e é ele que o
 modelo recebe **byte a byte**: o arquivo não tem título nem comentário porque cada
 caractere é enviado em toda mensagem trocada.
 
@@ -78,15 +78,15 @@ o formato `AAAA-MM-DD` ou a seção `O QUE VOCÊ NUNCA FAZ` (esta última via
 
 ## Conhecimento essencial e documentos
 
-[`conteudo/conhecimento.md`](conteudo/conhecimento.md) fica com o punhado de fatos que
+[`conteudo/conhecimento.md`](../../conteudo/conhecimento.md) fica com o punhado de fatos que
 precisam estar presentes em **toda** resposta: endereço, capacidade, janela de visita, a
 repetição da trava de preço e a lista do que a equipe precisa receber. Ele é cobrado em
 cada mensagem, então é o campo com a maior disciplina de tamanho.
 
 O volume — estrutura, o que está incluso, regras da casa, processo de contratação e FAQ —
-mora em [`conteudo/base/`](conteudo/base/), um arquivo por assunto que o cliente pergunta.
+mora em [`conteudo/base/`](../../conteudo/base/), um arquivo por assunto que o cliente pergunta.
 Esses são recuperados por busca semântica e pagos só quando relevantes. Como escrevê-los
-está em [`conteudo/base/_LEIA-ME.md`](conteudo/base/_LEIA-ME.md).
+está em [`conteudo/base/_LEIA-ME.md`](../../conteudo/base/_LEIA-ME.md).
 
 **Três coisas não entram em nenhum dos dois: preço, disponibilidade e os dias da semana em
 que a casa funciona.** Os três vêm da agenda, em tempo real. Escritos no conteúdo, viram

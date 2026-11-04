@@ -7,5 +7,5 @@ produzem o MESMO dicionário de decisão (`reply`, `captured`, `status`, `summar
 handoff atômico, nota de triagem, ações do salão, persistência) é o mesmo código.
 
 Foi essa escolha que evitou tocar em `app/ai/llm.py`, o arquivo mais caro de manter
-divergente da base (`PLATAFORMA.md` §5).
+divergente da base (`docs/produto/PLATAFORMA.md` §5).
 """

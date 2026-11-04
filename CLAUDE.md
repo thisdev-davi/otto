@@ -1,8 +1,8 @@
 # CLAUDE.md — Otto
 
 Guia operacional para trabalhar neste repositório. Leia antes de gerar ou alterar código.
-Para visão de produto e arquitetura, ver `OTTO_PROJETO.md`.
-Para construir um sistema nichado **a partir** deste repositório, ver `PLATAFORMA.md`.
+Para visão de produto e arquitetura, ver `docs/produto/OTTO_PROJETO.md`.
+Para construir um sistema nichado **a partir** deste repositório, ver `docs/produto/PLATAFORMA.md`.
 
 ---
 
@@ -11,7 +11,7 @@ Para construir um sistema nichado **a partir** deste repositório, ver `PLATAFOR
 Inbox de atendimento de **WhatsApp** (Evolution API/baileys) para pequenos negócios, com agente de IA.
 Backend FastAPI + Celery, PostgreSQL, Redis; frontend Next.js 15.5. Multi-tenant por linha.
 
-WhatsApp é o único canal ativo: Instagram e e-mail foram removidos por decisão (`OTTO_PROJETO.md` §3.2)
+WhatsApp é o único canal ativo: Instagram e e-mail foram removidos por decisão (`docs/produto/OTTO_PROJETO.md` §3.2)
 e a migração para a Cloud API saiu do roadmap (§2.2). A regra 1 abaixo continua valendo mesmo assim —
 ver o porquê nela.
 
@@ -264,8 +264,8 @@ O derivado do salão liga-se ao agente em **dois pontos, de propósito mínimos*
 `ai_context.build_knowledge` (1 linha, cobre bot e copilot) e `bot_orchestrator._handle`
 (2 linhas). `app/ai/llm.py` **não é tocado** — as ações do agente trafegam pelo `captured`,
 que é dicionário livre decidido pela persona. O texto da persona vive em
-`conteudo/persona.md`, versionado — ver `GUIA-PERSONA-SALAO.md`. O roteiro do modo fluxo
-mora em `conteudo/fluxo.json`, publicado pelo mesmo sincronizador — ver `GUIA-FLUXO-SALAO.md`.
+`conteudo/persona.md`, versionado — ver `docs/guias/GUIA-PERSONA-SALAO.md`. O roteiro do modo fluxo
+mora em `conteudo/fluxo.json`, publicado pelo mesmo sincronizador — ver `docs/guias/GUIA-FLUXO-SALAO.md`.
 
 ---
 
@@ -327,7 +327,7 @@ no painel**. O que continua fora é o **editor visual** do fluxo: hoje o roteiro
 
 Não implementar sem ser pedido: funil de vendas, campanhas em massa,
 distribuição automática de conversas, merge de contatos, e **qualquer canal que não seja WhatsApp**.
-Ver `OTTO_PROJETO.md` §3.2 e §8.
+Ver `docs/produto/OTTO_PROJETO.md` §3.2 e §8.
 
 Decidido para a agenda, e fora de escopo até que se peça: **padrão por dia da semana** (existiu e
 foi retirado), horizonte de venda, modo sombra, lembretes automáticos (exigiriam `celery beat`,

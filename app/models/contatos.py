@@ -1,6 +1,6 @@
 """Anotações que a equipe escreve sobre um cliente.
 
-Arquivo NOVO de propósito (`PLATAFORMA.md` §1): `models/core.py` é núcleo, e o que se
+Arquivo NOVO de propósito (`docs/produto/PLATAFORMA.md` §1): `models/core.py` é núcleo, e o que se
 quer aqui — uma tabela filha de `contacts` — não exige tocá-lo.
 
 **Por que tabela e não mais uma chave em `contacts.profile`.** O JSONB do perfil já existe

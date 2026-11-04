@@ -321,7 +321,7 @@ export const api = {
       ),
   },
   // ───────────────── salão: agenda e espaço ─────────────────
-  // No FIM do objeto de propósito (`PLATAFORMA.md` §1): acrescentar aqui não reordena
+  // No FIM do objeto de propósito (`docs/produto/PLATAFORMA.md` §1): acrescentar aqui não reordena
   // nada do que a base já tem, então o merge não conflita.
   agenda: {
     list: (token: string, de?: string, ate?: string) =>
@@ -416,7 +416,7 @@ export const api = {
         token,
       }),
   },
-  // Atendimento por fluxo (nível 1). No FIM do objeto, por `PLATAFORMA.md` §1.
+  // Atendimento por fluxo (nível 1). No FIM do objeto, por `docs/produto/PLATAFORMA.md` §1.
   fluxo: {
     obter: (token: string) => apiFetch<import('@/types/api').Fluxo>('/fluxo', { token }),
     validar: (token: string, grafo: import('@/types/api').GrafoDoFluxo, nome = '') =>

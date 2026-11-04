@@ -3,7 +3,7 @@
 O motor (`app/flow/`) conhece sete tipos genéricos e mais nenhum. Estes dois entram por
 `registro.registrar()` — uma chamada cada, sem patch no motor. Mesmo padrão e mesmo motivo
 de `channels/factory.py::_registry`: o que é do nicho mora num arquivo que a base não tem
-(`PLATAFORMA.md` §1).
+(`docs/produto/PLATAFORMA.md` §1).
 
 **Nada aqui reimplementa regra de agenda.** O nó `agenda` chama `salao_agenda.resolver`, a
 única fonte de verdade de disponibilidade (`CLAUDE.md` regra 4), e só ramifica no motivo

@@ -4,9 +4,9 @@ Este documento é para quem **vende** o Otto, não para quem o programa. Ele sep
 existe em dois produtos, diz o que cada um faz e o que cada um não faz, mostra de onde vem
 o custo de cada um e dá o roteiro de uma demonstração.
 
-Para o produto por dentro, ver [`OTTO_PROJETO.md`](OTTO_PROJETO.md). Para o roteiro sem IA,
-[`GUIA-FLUXO-SALAO.md`](GUIA-FLUXO-SALAO.md). Para a persona do agente,
-[`GUIA-PERSONA-SALAO.md`](GUIA-PERSONA-SALAO.md).
+Para o produto por dentro, ver [`docs/produto/OTTO_PROJETO.md`](OTTO_PROJETO.md). Para o roteiro sem IA,
+[`docs/guias/GUIA-FLUXO-SALAO.md`](../guias/GUIA-FLUXO-SALAO.md). Para a persona do agente,
+[`docs/guias/GUIA-PERSONA-SALAO.md`](../guias/GUIA-PERSONA-SALAO.md).
 
 ---
 

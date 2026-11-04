@@ -4,10 +4,10 @@ Este documento é o **conteúdo** do nível 1: o roteiro determinístico que ate
 sem nenhuma chamada de modelo de linguagem.
 
 Para a arquitetura e as invariantes, ver `CLAUDE.md` §7. Para a persona do agente de IA, que
-é o nível 3 e vive em paralelo, ver `GUIA-PERSONA-SALAO.md`. Aqui está só como ler, alterar e
+é o nível 3 e vive em paralelo, ver `docs/guias/GUIA-PERSONA-SALAO.md`. Aqui está só como ler, alterar e
 publicar o roteiro.
 
-**Onde ele mora: [`conteudo/fluxo.json`](conteudo/fluxo.json).** Mesmo caminho da persona,
+**Onde ele mora: [`conteudo/fluxo.json`](../../conteudo/fluxo.json).** Mesmo caminho da persona,
 mesmo comando:
 
 ```bash

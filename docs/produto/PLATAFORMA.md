@@ -7,7 +7,7 @@ Este documento responde uma pergunta que os outros não respondem:
 | Documento | Pergunta |
 |---|---|
 | `README.md` | o que é isto e como eu rodo |
-| `OTTO_PROJETO.md` | o que o produto é e por quê |
+| `docs/produto/OTTO_PROJETO.md` | o que o produto é e por quê |
 | `CLAUDE.md` / `frontend/CLAUDE.md` | posso fazer isso **neste** repositório? |
 | **este** | **como construir OUTRO repositório a partir deste** |
 
@@ -270,7 +270,7 @@ A lista honesta. É o que decide se o seu nicho cabe em configuração.
 - [ ] `python3 scripts/criar_conta.py --nome "..." --email "..."`
 - [ ] Identidade visual nos valores de `globals.css` + `npm run check:contrast`
 - [ ] Persona, conhecimento e documentos do nicho em `conteudo/`, seguidos de
-      `python3 scripts/sincronizar_conteudo.py --conta "..."` (ver `GUIA-CONTEUDO-AGENTE.md`)
+      `python3 scripts/sincronizar_conteudo.py --conta "..."` (ver `docs/guias/GUIA-CONTEUDO-AGENTE.md`)
 - [ ] `pytest` e `cd frontend && npm run check` verdes
 - [ ] Commit único de marca, isolado do resto
 
@@ -279,7 +279,7 @@ A lista honesta. É o que decide se o seu nicho cabe em configuração.
 ## 7. Como manter este documento
 
 Toda afirmação aqui é **ponteiro para um caminho**, nunca cópia de conteúdo. Foi copiar conteúdo que
-apodreceu a §10 do `OTTO_PROJETO.md` e matou o antigo `DESIGN.md`, que passou a ensinar exatamente o
+apodreceu a §10 do `docs/produto/OTTO_PROJETO.md` e matou o antigo `DESIGN.md`, que passou a ensinar exatamente o
 que o gate de tokens reprova.
 
 Mexeu em `channels/factory.py`, em `_OPENAI_COMPAT_BASE`, na interface `ChannelProvider`, na

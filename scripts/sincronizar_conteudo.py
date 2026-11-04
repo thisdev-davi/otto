@@ -13,7 +13,7 @@ Idempotente: `kb.ingest_document` já é idempotente por `(tenant_id, source)`, 
 duas vezes não duplica trecho nenhum. Source cujo arquivo sumiu é removida.
 
 **Por que existe:** duas features de produto — envio de fotos e pré-reserva — são prosa
-dentro da persona (`GUIA-PERSONA-SALAO.md`). Enquanto isso morava num `<textarea>`, apagar
+dentro da persona (`docs/guias/GUIA-PERSONA-SALAO.md`). Enquanto isso morava num `<textarea>`, apagar
 um parágrafo desligava as duas sem erro em log, sem histórico e sem revisão. Em arquivo,
 isso vira diff de PR — e a validação abaixo reprova antes de chegar ao banco.
 """
@@ -36,7 +36,7 @@ BASE = CONTEUDO / "base"
 # não precisa dele, e a ausência do arquivo não é erro.
 FLUXO = CONTEUDO / "fluxo.json"
 
-# Tetos folgados sobre os alvos do `GUIA-CONTEUDO-AGENTE.md` (3.500 / 1.200). Só disparam
+# Tetos folgados sobre os alvos do `docs/guias/GUIA-CONTEUDO-AGENTE.md` (3.500 / 1.200). Só disparam
 # em desvio real — e o custo destes dois campos é cobrado em TODA mensagem, o dia inteiro.
 MAX_PERSONA = 4000
 MAX_CONHECIMENTO = 1500

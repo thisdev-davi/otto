@@ -46,7 +46,7 @@ foi deixá-lo **fora do MVP** para que o canal provasse a dor primeiro; o modelo
 a porta aberta (mensagem `OUTBOUND` com `sender_user_id` nulo = envio do sistema/agente).
 
 Está entregue desde a fase 2, com persona e conhecimento por tenant, RAG e handoff — ver §3.1. O
-conteúdo que o alimenta tem guia próprio: `GUIA-CONTEUDO-AGENTE.md`.
+conteúdo que o alimenta tem guia próprio: `docs/guias/GUIA-CONTEUDO-AGENTE.md`.
 
 ---
 
@@ -71,7 +71,7 @@ conteúdo que o alimenta tem guia próprio: `GUIA-CONTEUDO-AGENTE.md`.
 - Front-end como base de plataforma: tokens de cor em CSS vars, tema escuro, primitivos em
   `components/ui/`, layout de 320px ao desktop. Convenções em `frontend/CLAUDE.md`.
 - **O Otto é base para derivados**: cada sistema nichado é um fork, com seu deploy e sua persona.
-  A fronteira entre núcleo estável e ponto de extensão está em `PLATAFORMA.md`.
+  A fronteira entre núcleo estável e ponto de extensão está em `docs/produto/PLATAFORMA.md`.
 - **Agenda do salão (deste derivado)**: preço por data, bloqueio, preenchimento em lote e
   **pré-reserva atômica** — overbooking impossível por construção, via índice parcial único
   (`CLAUDE.md` §3). O agente consulta a agenda em tempo real e informa o valor exato da data;
@@ -89,7 +89,7 @@ conteúdo que o alimenta tem guia próprio: `GUIA-CONTEUDO-AGENTE.md`.
   contra a agenda real sem enviar nada nem segurar data, que é o que torna editar seguro e
   o que permite demonstrar o produto sem parear um número.
 - **Galeria do espaço (deste derivado)**: fotos cadastradas com ordem e liga/desliga, que o
-  agente envia sozinho quando o cliente pede para ver o salão. Conteúdo em `GUIA-PERSONA-SALAO.md`.
+  agente envia sozinho quando o cliente pede para ver o salão. Conteúdo em `docs/guias/GUIA-PERSONA-SALAO.md`.
 - **Nenhum caminho termina em silêncio**: mídia que o bot não lê é reconhecida por tipo e, na
   segunda, vira fila da equipe com nota — nos dois cérebros; áudio é transcrito e respondido pelo
   conteúdo, e transcrição que falha também avisa. Reação (👍) deixou de virar mensagem.
@@ -103,7 +103,7 @@ conteúdo que o alimenta tem guia próprio: `GUIA-CONTEUDO-AGENTE.md`.
 - **Cloud API Oficial da Meta** — ver §2.2. Ficamos na Evolution.
 - **Deploy, CI e imagem de container** — decisão de 2026-07-28. O Otto é a **base**: quem vai a
   produção é o derivado, e a forma certa de hospedar depende de onde ele vai rodar. Este repositório
-  sobe em máquina de desenvolvimento (`./dev.sh`) e nada mais. Ver `PLATAFORMA.md` §0.
+  sobe em máquina de desenvolvimento (`./dev.sh`) e nada mais. Ver `docs/produto/PLATAFORMA.md` §0.
 - **Editor visual de fluxo** (arrastar, conectar e criar caixas). Editar o **texto** das
   caixas entregou junto com o motor; o que continua fora é mexer no *desenho* pelo painel.
   Quais caixas existem e como se ligam vem de `conteudo/fluxo.json`, versionado no git e
@@ -130,7 +130,7 @@ As notas ficam registradas porque a razão da recusa envelhece melhor que a recu
    não buraco: quem lê a imagem hoje é o humano que assume, e agora ele é sempre chamado.
 3. **RLS só em `kb_documents`** — o isolamento entre tenants das demais tabelas depende 100% da
    disciplina de incluir `tenant_id` no `WHERE`. Basta para um derivado de tenant único; para um que
-   atenda vários clientes no mesmo banco, a migration de RLS é decisão dele. Ver `PLATAFORMA.md` §2.3.
+   atenda vários clientes no mesmo banco, a migration de RLS é decisão dele. Ver `docs/produto/PLATAFORMA.md` §2.3.
 
 **Resolvido em 2026-09-08:** a **chave de transcrição** deixou de ser pendência — o último ramo de
 `transcription._resolve` cai na chave do próprio provedor do tenant (Gemini transcreve por
@@ -297,7 +297,7 @@ A mesma lógica protege **liberação** (`AND assigned_user_id = :user_id` — s
 | Fase 2 | Agente de IA para primeira interação + RAG + copilot | ✓ entregue |
 | Fase 3 | Gestão de equipe, memória de cliente, front-end como base de plataforma | ✓ entregue |
 | Fase 4 | Envio de mídia pelo atendente, respostas rápidas gerenciáveis, busca de conversas | ✓ entregue |
-| Fase 5 | Base para derivados: `PLATAFORMA.md`, README, superfície de erro no front | ✓ entregue |
+| Fase 5 | Base para derivados: `docs/produto/PLATAFORMA.md`, README, superfície de erro no front | ✓ entregue |
 | Derivado | Salão de festas: agenda com preço por data, pré-reserva atômica, galeria do espaço | ✓ entregue |
 | Nível 1 | Atendimento por fluxo (sem IA), horário de atendimento, killswitch de 3 estados | ✓ entregue |
 | Nível 1 | Edição do texto das caixas pelo painel + simulador do roteiro | ✓ entregue |
@@ -310,7 +310,7 @@ A migração à Cloud API saiu do roadmap (§2.2), mas o isolamento **não** foi
 mantém barata a saída caso a conexão não-oficial se torne inviável.
 
 **Risco nº 1 (resolvido para o LLM):** o agente já rodou contra provedor real (Gemini), e o guia de
-conteúdo em `GUIA-CONTEUDO-AGENTE.md` foi escrito a partir dessas execuções, não da documentação.
+conteúdo em `docs/guias/GUIA-CONTEUDO-AGENTE.md` foi escrito a partir dessas execuções, não da documentação.
 A transcrição de áudio herda a mesma chave quando o provedor sabe transcrever, e áudio que não vira
 texto deixou de ser silêncio: o cliente é avisado e, na segunda vez, a equipe é chamada.
 
@@ -348,7 +348,7 @@ app/
 
 > Esta árvore é resumo, não inventário: 16 services, 10 módulos de API, 5 de `ai/`. Para a lista
 > exata, o diretório é a fonte. A **fronteira** entre o que é núcleo estável e o que foi desenhado
-> para ser trocado está em `PLATAFORMA.md` §1.
+> para ser trocado está em `docs/produto/PLATAFORMA.md` §1.
 
 ---
 

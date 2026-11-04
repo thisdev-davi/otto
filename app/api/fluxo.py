@@ -1,6 +1,6 @@
 """Endpoints do atendimento por fluxo: ler e publicar o roteiro do tenant.
 
-Arquivo novo (`PLATAFORMA.md` §1). O guard é no router inteiro, como em `api/bot.py`:
+Arquivo novo (`docs/produto/PLATAFORMA.md` §1). O guard é no router inteiro, como em `api/bot.py`:
 publicar um roteiro muda o atendimento do negócio inteiro, e rota nova aqui nasce
 protegida em vez de depender de alguém lembrar da guarda.
 

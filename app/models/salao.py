@@ -1,6 +1,6 @@
 """Modelos do derivado Salão de Festas: agenda de datas, reservas e galeria do espaço.
 
-Arquivo NOVO de propósito (`PLATAFORMA.md` §1): nada aqui altera `models/core.py`, então
+Arquivo NOVO de propósito (`docs/produto/PLATAFORMA.md` §1): nada aqui altera `models/core.py`, então
 este derivado não conflita com a base no arquivo mais sensível do núcleo.
 
 A unidade de negócio é a **data inteira** — o salão é alugado por dia, não por período.

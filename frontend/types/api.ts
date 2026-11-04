@@ -339,7 +339,7 @@ export interface InvitePublic {
 }
 
 // ─────────────────── salão: agenda, reservas e espaço ───────────────────
-// Acrescentado no FIM (`PLATAFORMA.md` §1): região que a base não mexe. O cliente TS é
+// Acrescentado no FIM (`docs/produto/PLATAFORMA.md` §1): região que a base não mexe. O cliente TS é
 // escrito à mão — mudou o schema Pydantic, muda aqui na mesma leva.
 
 /** Só `pre_reservada` e `confirmada` ocupam a data (índice parcial no banco). */
@@ -541,7 +541,7 @@ export interface ContactPerfil {
 }
 
 // ─────────────────────────── atendimento por fluxo ───────────────────────────
-// No FIM do arquivo (`PLATAFORMA.md` §1): a base também mexe aqui, e append não conflita.
+// No FIM do arquivo (`docs/produto/PLATAFORMA.md` §1): a base também mexe aqui, e append não conflita.
 
 /** Os nove tipos de caixa. Conjunto FECHADO — espelha `app/flow/schema.py::ESPEC`. */
 export type TipoNo =

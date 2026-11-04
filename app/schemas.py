@@ -348,7 +348,7 @@ class QuickReplyInSchema(BaseModel):
 
 
 # ─────────────────────── salão: agenda, reservas e espaço ───────────────────────
-# Acrescentado no FIM de propósito (`PLATAFORMA.md` §1): é a região do arquivo que a base
+# Acrescentado no FIM de propósito (`docs/produto/PLATAFORMA.md` §1): é a região do arquivo que a base
 # não mexe, então este bloco do derivado não vira conflito em toda atualização.
 
 
@@ -586,7 +586,7 @@ class ContactPerfilSchema(BaseModel):
 
 
 # ─────────────────────────── atendimento por fluxo ───────────────────────────
-# Acrescentado no FIM do arquivo (`PLATAFORMA.md` §1): a base também mexe aqui, e append
+# Acrescentado no FIM do arquivo (`docs/produto/PLATAFORMA.md` §1): a base também mexe aqui, e append
 # não conflita.
 
 

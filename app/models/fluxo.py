@@ -1,6 +1,6 @@
 """Modelo do atendimento por fluxo: o roteiro determinístico de um tenant.
 
-Arquivo NOVO de propósito (`PLATAFORMA.md` §1): a coluna `modo` em `bot_settings` é o
+Arquivo NOVO de propósito (`docs/produto/PLATAFORMA.md` §1): a coluna `modo` em `bot_settings` é o
 único ponto do núcleo que esta feature toca. O grafo em si mora aqui.
 
 **Uma linha por tenant**, igual a `bot_settings`. Vários fluxos por tenant seria a feature

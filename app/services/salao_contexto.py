@@ -7,7 +7,7 @@ gastaria contexto e ainda deixaria o modelo escolher a linha errada.
 
 A saída daqui entra em `knowledge`, que já tem instrução anti-alucinação em
 `llm._knowledge_block`. Por isso **`app/ai/llm.py` não é tocado** — o arquivo mais caro
-de manter divergente da base (`PLATAFORMA.md` §5) fica intacto.
+de manter divergente da base (`docs/produto/PLATAFORMA.md` §5) fica intacto.
 """
 
 import logging

@@ -2,7 +2,7 @@
 
 **Como o agente pede uma ação sem tocar em `app/ai/llm.py`.** `decision["captured"]` é,
 por construção, um dicionário arbitrário que o modelo preenche a partir da persona
-(`PLATAFORMA.md` §3). Então a persona pede duas chaves:
+(`docs/produto/PLATAFORMA.md` §3). Então a persona pede duas chaves:
 
     "_acao_fotos": "sim"
     "_acao_pre_reserva": "2026-08-15"

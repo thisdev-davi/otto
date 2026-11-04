@@ -391,7 +391,7 @@ class _Turno:
         real: é das formas mais naturais de responder um menu numerado.
 
         Vem DEPOIS de rótulo e sinônimo de propósito — a armadilha do sinônimo curto
-        (`GUIA-FLUXO-SALAO.md`) continua valendo, e quem casa por texto continua ganhando.
+        (`docs/guias/GUIA-FLUXO-SALAO.md`) continua valendo, e quem casa por texto continua ganhando.
 
         As duas restrições são o que impede o tiro no pé: **um** número só (senão "dia 20,
         umas 200 pessoas" viraria escolha de menu) e, em volta dele, só vocabulário de
