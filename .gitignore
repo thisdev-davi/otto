@@ -28,3 +28,4 @@ frontend/.next-*/
 *.bundle
 skills-lock.json
 scripts/.termos_privados.txt
+.coverage

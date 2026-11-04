@@ -1,6 +1,7 @@
 -r requirements.txt
 pytest
 pytest-asyncio
+pytest-cov
 ruff
 moto[s3]>=5,<6
 PyYAML>=6,<7
