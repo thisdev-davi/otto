@@ -85,54 +85,36 @@ async def ingest(
     db: AsyncSession,
     redis_client,
     normalized: NormalizedInbound,
-    connection_id: str | None = None,
+    connection_id: str,
 ) -> dict | None:
     """Persiste a mensagem inbound. Retorna {tenant_id, conversation_id} da mensagem
     nova, ou None quando o evento é duplicado (no-op).
 
-    `connection_id` vem da rota, resolvido pelo `webhook_id` secreto da URL. Quando ele
-    existe, é ELE que decide o tenant, e o `instance` do corpo vira apenas um dado a
-    conferir. O caminho sem `connection_id` é a rota legada, mantida um ciclo — ali o
-    tenant ainda sai do corpo, que é exatamente a fraqueza que o `webhook_id` corrige.
+    `connection_id` vem da rota, resolvido pelo `webhook_id` secreto da URL. É ELE que
+    decide o tenant; o `instance` do corpo é apenas um dado a conferir (regra 5).
     """
-    # 1. Resolve ChannelConnection — pelo id autenticado, ou (legado) pelo instance_key.
-    if connection_id is not None:
-        row = await db.execute(
-            text(
-                "SELECT id, tenant_id, credentials->>'instance' AS instance "
-                "FROM channel_connections "
-                "WHERE id = :cid AND channel = :channel AND is_active = true"
-            ),
-            {"cid": connection_id, "channel": normalized.channel.name},
+    # 1. Resolve ChannelConnection pelo id autenticado.
+    row = await db.execute(
+        text(
+            "SELECT id, tenant_id, credentials->>'instance' AS instance "
+            "FROM channel_connections "
+            "WHERE id = :cid AND channel = :channel AND is_active = true"
+        ),
+        {"cid": connection_id, "channel": normalized.channel.name},
+    )
+    conn_row = row.fetchone()
+    # A instância do corpo tem de ser a da conexão autenticada. Divergiu, alguém está
+    # entregando evento de outra instância nesta URL — descarta em vez de gravar no
+    # tenant errado.
+    if conn_row is not None and normalized.instance_key != conn_row.instance:
+        log.error(
+            "Ingestão descartada: webhook da conexão %s trouxe instance=%r, mas a "
+            "conexão é da instância %r.",
+            connection_id,
+            normalized.instance_key,
+            conn_row.instance,
         )
-        conn_row = row.fetchone()
-        # A instância do corpo tem de ser a da conexão autenticada. Divergiu, alguém está
-        # entregando evento de outra instância nesta URL — descarta em vez de gravar no
-        # tenant errado.
-        if conn_row is not None and normalized.instance_key != conn_row.instance:
-            log.error(
-                "Ingestão descartada: webhook da conexão %s trouxe instance=%r, mas a "
-                "conexão é da instância %r.",
-                connection_id,
-                normalized.instance_key,
-                conn_row.instance,
-            )
-            return None
-    else:
-        row = await db.execute(
-            text(
-                "SELECT id, tenant_id FROM channel_connections "
-                "WHERE channel = :channel "
-                "AND credentials->>'instance' = :instance_key "
-                "AND is_active = true "
-                "LIMIT 1"
-            ),
-            {
-                "channel": normalized.channel.name,
-                "instance_key": normalized.instance_key,
-            },
-        )
-        conn_row = row.fetchone()
+        return None
 
     if conn_row is None:
         # Sem conexão ativa a mensagem se perde de qualquer jeito — o `raise` daqui só

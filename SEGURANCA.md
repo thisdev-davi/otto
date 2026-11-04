@@ -318,8 +318,8 @@ Ordem importa. Os dois primeiros itens são obrigatórios.
    FROM channel_connections
    WHERE channel = 'WHATSAPP' AND NOT (credentials ? 'webhook_id');
    ```
-   Quando essa consulta voltar vazia, **remover a rota legada** `POST /webhooks/{channel}`
-   de `app/api/webhooks.py` — é o último lugar onde o tenant ainda sai do corpo.
+   A rota legada `POST /webhooks/{channel}` já foi removida: conexão sem `webhook_id`
+   deixa de receber eventos até ser reprovisionada.
 
 5. `git rm --cached frontend/.env.local` (M6).
 

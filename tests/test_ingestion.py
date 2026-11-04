@@ -19,11 +19,18 @@ from app.core.database import AsyncSessionLocal
 from app.main import app
 from app.models.enums import Channel, ContentType
 from app.services import avatars
-from app.services.ingestion import ingest
+from app.services.ingestion import ingest as _ingest
 
 pytestmark = pytest.mark.asyncio
 
 INSTANCIA = "otto-ingest-test"
+# Fixo para o helper abaixo: cada teste recria e apaga a conexão com este id.
+CONEXAO_ID = uuid.uuid4()
+
+
+async def ingest(db, redis_client, normalized, connection_id=None):
+    """Ingestão pela conexão autenticada do fixture, como a rota faz (regra 5)."""
+    return await _ingest(db, redis_client, normalized, str(connection_id or CONEXAO_ID))
 
 
 class _FakeRedis:
@@ -68,7 +75,7 @@ async def _phone_do_contato(tenant_id: uuid.UUID, external_id: str) -> str | Non
 @pytest_asyncio.fixture
 async def conexao():
     tenant_id = uuid.uuid4()
-    conn_id = uuid.uuid4()
+    conn_id = CONEXAO_ID
     async with AsyncSessionLocal() as db:
         await db.execute(
             text("INSERT INTO tenants (id, name) VALUES (:id, 'Tenant Ingest')"),
@@ -117,7 +124,16 @@ async def test_sem_conexao_ativa_e_no_op_e_nao_levanta(conexao) -> None:
     """
     async with AsyncSessionLocal() as db:
         resultado = await ingest(
-            db, _FakeRedis(), _inbound("MSG-SEM-CONEXAO", "instancia-que-nao-existe")
+            db, _FakeRedis(), _inbound("MSG-SEM-CONEXAO"), connection_id=uuid.uuid4()
+        )
+    assert resultado is None
+
+
+async def test_instancia_do_corpo_diferente_da_conexao_e_descartada(conexao) -> None:
+    """O corpo não escolhe tenant: instância divergente da conexão autenticada some."""
+    async with AsyncSessionLocal() as db:
+        resultado = await ingest(
+            db, _FakeRedis(), _inbound("MSG-OUTRA-INST", "instancia-de-outro-salao")
         )
     assert resultado is None
 

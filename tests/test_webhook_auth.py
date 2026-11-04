@@ -188,3 +188,15 @@ class TestSuperficieDoWebhook:
             headers={"apikey": APIKEY, "Content-Type": "application/json"},
         )
         assert resp.status_code == 413
+
+
+async def test_rota_sem_webhook_id_nao_existe(client, conexoes):
+    """A rota legada deixava o corpo escolher o tenant; ela não pode voltar."""
+    alvo = conexoes["conexoes"][0]
+    r = await client.post(
+        "/webhooks/whatsapp",
+        json=_payload(alvo["instance"]),
+        headers={"apikey": APIKEY},
+    )
+    assert r.status_code in (404, 405)
+    assert conexoes["enfileirados"] == []

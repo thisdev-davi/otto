@@ -79,8 +79,9 @@ Vale para toda entrada não autenticada por JWT — hoje, o webhook de canal.
   mensagem forjada caía — inclusive fazendo o bot responder para números arbitrários.
   Ver `SEGURANCA.md` §C1.
 - Segredo é **por conexão**, nunca um só para a plataforma, e a comparação é
-  `hmac.compare_digest`. A rota legada `POST /webhooks/{channel}` existe só até todas as
-  conexões terem `webhook_id`; ela é o último lugar onde o corpo ainda decide o tenant.
+  `hmac.compare_digest`. A rota legada `POST /webhooks/{channel}`, que resolvia o tenant pelo
+  corpo, foi removida junto com esse caminho em `ingestion.ingest`: `connection_id` é
+  obrigatório. Não reintroduza um caminho de ingestão sem conexão autenticada.
 
 ### 6. Mimetype guardado não é confiável
 

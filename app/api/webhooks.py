@@ -11,8 +11,6 @@ o bot responder para números arbitrários, em qualquer cliente da plataforma. O
 conexão fecha isso — vazar o de um salão não alcança o vizinho.
 """
 
-import logging
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
@@ -26,8 +24,6 @@ from app.services import channels as channels_service
 from app.tasks.ingest import ingest_webhook
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
-
-log = logging.getLogger("uvicorn.error")
 
 # Teto do corpo do webhook. Uma mensagem do WhatsApp é JSON com metadados — nunca chega
 # perto disso (a mídia vem depois, por download, não no corpo). O cap existe porque a
@@ -99,34 +95,4 @@ async def receive_webhook(
     )
 
     ingest_webhook.delay(channel.value, body.decode(), str(conexao["id"]))
-    return {"status": "accepted"}
-
-
-@router.post("/{channel}", status_code=200, deprecated=True)
-async def receive_webhook_legado(channel: Channel, request: Request) -> dict[str, str]:
-    """Rota antiga, sem `webhook_id`. Mantida um ciclo para não derrubar conexões já
-    provisionadas — o Evolution delas ainda aponta para cá até serem reprovisionadas.
-
-    Aqui o tenant volta a sair do campo `instance` do corpo, então a proteção é só a
-    `apikey` compartilhada (agora rotacionada e comparada em tempo constante). REMOVER
-    assim que todas as conexões tiverem `webhook_id` nas credentials — a query que mostra
-    quais faltam está em `SEGURANCA.md`, seção "Passos de deploy".
-    """
-    await ratelimit.exigir(
-        f"webhook:ip:{ratelimit.ip_do_cliente(request)}",
-        settings.RATE_LIMIT_WEBHOOK,
-        settings.RATE_LIMIT_WEBHOOK_JANELA,
-    )
-
-    body = await _ler_corpo(request)
-    provider = _provider_ou_404(channel)
-    if not provider.verify_webhook(dict(request.headers), body):
-        raise HTTPException(status_code=401, detail="Webhook inválido")
-
-    log.warning(
-        "Webhook recebido na rota legada /webhooks/%s (sem webhook_id). O tenant está "
-        "sendo resolvido pelo corpo. Reprovisione a conexão em Configurações › WhatsApp.",
-        channel.value,
-    )
-    ingest_webhook.delay(channel.value, body.decode(), None)
     return {"status": "accepted"}

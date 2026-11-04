@@ -389,7 +389,7 @@ Objetivo: uma mensagem enviada no WhatsApp aparecer gravada no banco.
 
 **Entregas:**
 - `app/services/ingestion.py` — recebe `NormalizedInbound`, acha-ou-cria `Contact` e `Conversation`, grava `Message` respeitando o `UniqueConstraint(channel, external_id)` (idempotência), atualiza `last_message_at` / `last_message_preview` / `unread_count` na conversa
-- `app/api/webhooks.py` — endpoint POST `/webhooks/{channel}` que chama `verify_webhook` e despacha para o worker
+- `app/api/webhooks.py` — endpoint POST `/webhooks/{channel}/{webhook_id}` que chama `verify_webhook` e despacha para o worker
 - `app/tasks/ingest.py` — task Celery que chama `ingestion.py`
 - Redis pub/sub — ao gravar mensagem, publica evento `{tenant_id}:{conversation_id}` no canal Redis
 - `app/api/ws.py` — endpoint WebSocket `/ws/{tenant_id}` que assina o canal Redis e empurra eventos para o frontend

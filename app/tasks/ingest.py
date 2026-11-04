@@ -17,9 +17,7 @@ _STATUS_RANK = {"SENT": 1, "DELIVERED": 2, "READ": 3, "FAILED": 4}
 
 
 @celery_app.task(name="tasks.ingest_webhook")
-def ingest_webhook(
-    channel_str: str, raw_body: str, connection_id: str | None = None
-) -> None:
+def ingest_webhook(channel_str: str, raw_body: str, connection_id: str) -> None:
     """Processa um webhook já autenticado pela rota.
 
     Recebe `connection_id` (resolvido pelo `webhook_id` da URL) em vez dos headers da
@@ -35,7 +33,7 @@ def ingest_webhook(
     run_task(lambda: _handle_events(events_parsed, connection_id))
 
 
-async def _handle_events(events_parsed: list, connection_id: str | None) -> None:
+async def _handle_events(events_parsed: list, connection_id: str) -> None:
     for normalized in events_parsed:
         if isinstance(normalized, NormalizedStatusUpdate):
             await _apply_status(normalized, connection_id)
@@ -43,7 +41,7 @@ async def _handle_events(events_parsed: list, connection_id: str | None) -> None
             await _ingest_one(normalized, connection_id)
 
 
-async def _ingest_one(normalized, connection_id: str | None = None) -> None:
+async def _ingest_one(normalized, connection_id: str) -> None:
     redis_client = aioredis.from_url(settings.REDIS_URL)
     try:
         async with WorkerSessionLocal() as db:
@@ -85,9 +83,7 @@ async def _ingest_one(normalized, connection_id: str | None = None) -> None:
         await redis_client.aclose()
 
 
-async def _apply_status(
-    update: NormalizedStatusUpdate, connection_id: str | None = None
-) -> None:
+async def _apply_status(update: NormalizedStatusUpdate, connection_id: str) -> None:
     """Atualiza o status de entrega/leitura, sem regredir (precedência no WHERE).
 
     O `tenant_id` entra no WHERE via `connection_id` (defesa em profundidade, CLAUDE.md).
@@ -98,8 +94,6 @@ async def _apply_status(
     new_rank = _STATUS_RANK.get(update.status.name, 0)
     escopo = (
         " AND tenant_id = (SELECT tenant_id FROM channel_connections WHERE id = :cid)"
-        if connection_id is not None
-        else ""
     )
     redis_client = aioredis.from_url(settings.REDIS_URL)
     try:
@@ -109,9 +103,8 @@ async def _apply_status(
                 "channel": update.channel.name,
                 "external_id": update.external_id,
                 "new_rank": new_rank,
+                "cid": connection_id,
             }
-            if connection_id is not None:
-                params["cid"] = connection_id
             row = await db.execute(
                 text(
                     "UPDATE messages SET status = :status "
