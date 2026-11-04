@@ -425,12 +425,6 @@ export const api = {
         token,
         body: JSON.stringify({ grafo, nome }),
       }),
-    publicar: (token: string, grafo: import('@/types/api').GrafoDoFluxo, nome = '') =>
-      apiFetch<import('@/types/api').Fluxo>('/fluxo', {
-        method: 'PUT',
-        token,
-        body: JSON.stringify({ grafo, nome }),
-      }),
     // Só texto: o corpo traz o que mudou e o servidor aplica sobre o grafo publicado.
     editarTextos: (token: string, textos: import('@/types/api').FluxoTextos) =>
       apiFetch<import('@/types/api').Fluxo>('/fluxo/textos', {

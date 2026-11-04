@@ -1,8 +1,11 @@
-"""Endpoints do atendimento por fluxo: ler e publicar o roteiro do tenant.
+"""Endpoints do atendimento por fluxo: ler, validar, simular e editar TEXTOS do roteiro.
 
 Arquivo novo (`docs/produto/PLATAFORMA.md` §1). O guard é no router inteiro, como em `api/bot.py`:
-publicar um roteiro muda o atendimento do negócio inteiro, e rota nova aqui nasce
+mexer no roteiro muda o atendimento do negócio inteiro, e rota nova aqui nasce
 protegida em vez de depender de alguém lembrar da guarda.
+
+**Não há rota que receba o grafo inteiro** (regra 7 do CLAUDE.md): a estrutura vem só de
+`conteudo/fluxo.json`, pelo sincronizador. O painel edita texto em `PATCH /fluxo/textos`.
 
 **Nada entra sem passar pelo validador.** É o mesmo `flow.schema.validar` que o
 sincronizador de conteúdo roda — um só lugar decide o que é um roteiro publicável, e é
@@ -54,40 +57,6 @@ async def validar_fluxo(
     """Confere sem publicar. É o que um editor de fluxo chama a cada alteração."""
     erros = flow_schema.validar(body.grafo)
     return FluxoValidacaoSchema(ok=not erros, erros=erros)
-
-
-@router.put("", response_model=FluxoSchema)
-async def publicar_fluxo(
-    body: FluxoUpdateSchema,
-    user: Annotated[TokenData, Depends(require_admin)],
-    db: Annotated[AsyncSession, Depends(get_session)],
-) -> FluxoSchema:
-    atual = await flow_store.carregar(db, user.tenant_id)
-    if atual and atual["gerenciado_por_arquivo"]:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "Este roteiro é publicado a partir de conteudo/fluxo.json. Edite o arquivo "
-                "e rode scripts/sincronizar_conteudo.py — salvar por aqui apagaria a "
-                "alteração dele na próxima sincronização."
-            ),
-        )
-
-    erros = flow_schema.validar(body.grafo)
-    if erros:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Roteiro inválido: " + " · ".join(erros[:5]),
-        )
-
-    versao = await flow_store.salvar(db, user.tenant_id, body.grafo, body.nome)
-    await db.commit()
-    return FluxoSchema(
-        nome=body.nome or body.grafo.get("nome", ""),
-        grafo=body.grafo,
-        versao=versao,
-        gerenciado_por_arquivo=False,
-    )
 
 
 @router.patch("/textos", response_model=FluxoSchema)

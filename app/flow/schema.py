@@ -1,7 +1,7 @@
 """O formato do grafo e o validador que impede um roteiro quebrado de ir ao ar.
 
 **Puro de propósito**: nada aqui toca banco nem rede, então o mesmo `validar()` roda no
-teste, no `scripts/sincronizar_conteudo.py --check` e antes de todo `PUT /fluxo`. É o que
+teste, no `scripts/sincronizar_conteudo.py --check` e em `POST /fluxo/validar`. É o que
 sustenta a promessa "o fluxo que você desenha é o fluxo que roda".
 
 Formato:

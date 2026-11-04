@@ -84,7 +84,7 @@ def test_arquivo_com_underscore_nao_e_indexado() -> None:
 
 
 def test_fluxo_json_e_publicavel() -> None:
-    """`conteudo/fluxo.json` passa no MESMO validador de `PUT /fluxo`.
+    """`conteudo/fluxo.json` passa no MESMO validador que o sincronizador roda.
 
     O sincronizador publica este arquivo em `bot_flows`, e um roteiro quebrado só daria
     sinal quando um cliente real caísse nele. Aqui dá sinal no `pytest`.

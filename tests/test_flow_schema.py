@@ -1,8 +1,8 @@
 """O validador do roteiro: o que ele reprova é o que nunca chega a um cliente.
 
 Este arquivo é a rede que sustenta a promessa "o fluxo que você desenha é o fluxo que
-roda". O mesmo `validar()` roda em três lugares — `PUT /fluxo`, o sincronizador de
-conteúdo e aqui —, então o que passar por ele passa em produção.
+roda". O mesmo `validar()` roda em três lugares — `POST /fluxo/validar`, o sincronizador
+de conteúdo e aqui —, então o que passar por ele passa em produção.
 
 Sem banco de propósito: o validador é puro, e teste puro é teste que ninguém desliga.
 """
@@ -240,3 +240,13 @@ def test_edicao_que_esvazia_um_texto_e_reprovada() -> None:
 def test_config_so_aceita_o_que_e_texto() -> None:
     _, erros = schema.aplicar_textos(_grafo_padrao(), {"config": {"no_handoff": "fim"}})
     assert any("não é um texto editável" in e for e in erros)
+
+
+def test_nenhuma_rota_publica_o_grafo_inteiro() -> None:
+    """Regra 7: a estrutura vem de `conteudo/fluxo.json`; o painel só edita texto."""
+    from app.main import app
+
+    metodos = {
+        m for r in app.routes if getattr(r, "path", "") == "/fluxo" for m in r.methods
+    }
+    assert metodos <= {"GET", "HEAD"}

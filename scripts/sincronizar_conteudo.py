@@ -175,7 +175,7 @@ def carregar_fluxo() -> dict | None:
 
 
 def _erros_do_fluxo() -> list[str]:
-    """Roda o MESMO validador que a rota `PUT /fluxo` usa.
+    """Roda o MESMO validador de `flow.schema.validar`, o único que existe.
 
     Um só lugar decide o que é um roteiro publicável — é isso que sustenta a promessa
     "o fluxo que você desenha é o fluxo que roda". O import é tardio porque `--check` de
