@@ -307,7 +307,8 @@ Ordem importa. Os dois primeiros itens são obrigatórios.
    Com `ENV=prod`, o boot aborta se algum deles ficar com valor de exemplo.
 
 2. **`ENV=prod`** no `.env` (desliga o `echo` do SQLAlchemy — M4) e **`TRUSTED_PROXY=true`**
-   (o rate limit por IP depende disso atrás do nginx).
+   (o rate limit por IP depende disso atrás do nginx), com `TRUSTED_PROXY_HOPS` igual ao
+   número de proxies que acrescentam itens ao `X-Forwarded-For` (o IP sai da direita).
 
 3. `alembic upgrade head` — duas migrations novas (`c9f4a7b21e63`, `e7b3d5a91f24`).
 

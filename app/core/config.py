@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # IP e escapar dos limites; deixar desligado ATRÁS de proxy faz todo mundo compartilhar
     # o mesmo balde (127.0.0.1) e um cliente barulhento derrubar os outros.
     TRUSTED_PROXY: bool = False
+    # Quantos proxies confiáveis acrescentam itens ao `X-Forwarded-For`. O IP do cliente é
+    # o N-ésimo a partir da DIREITA: à esquerda disso está o que o próprio cliente mandou.
+    TRUSTED_PROXY_HOPS: int = 1
     # Rate limits. Login é por (IP) e por (e-mail) — os dois contam separado.
     RATE_LIMIT_LOGIN: int = 5
     RATE_LIMIT_LOGIN_JANELA: int = 60

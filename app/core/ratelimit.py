@@ -97,11 +97,19 @@ def ip_do_cliente(request: Request) -> str:
     transformaria o limite por IP em decoração. Com nginx na frente, `request.client.host`
     é sempre 127.0.0.1 e o header é a única fonte real — daí a chave estar em config, e
     não num palpite do código.
+
+    O IP vem da DIREITA do header: cada proxy ACRESCENTA quem falou com ele, então o
+    primeiro item é o que o cliente quis escrever. Ler `[0]` deixava qualquer um mandar
+    `X-Forwarded-For: <ip aleatório>` e ganhar um balde novo por tentativa.
     """
     if settings.TRUSTED_PROXY:
-        encaminhado = request.headers.get("x-forwarded-for", "")
-        if encaminhado:
-            return encaminhado.split(",")[0].strip()
+        itens = [
+            p.strip()
+            for p in request.headers.get("x-forwarded-for", "").split(",")
+            if p.strip()
+        ]
+        if itens:
+            return itens[-min(max(settings.TRUSTED_PROXY_HOPS, 1), len(itens))]
     return request.client.host if request.client else "desconhecido"
 
 

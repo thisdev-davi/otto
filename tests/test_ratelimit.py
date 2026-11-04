@@ -129,8 +129,22 @@ class TestIpDoCliente:
 
     async def test_usa_xff_com_proxy_confiavel(self, monkeypatch):
         monkeypatch.setattr(settings, "TRUSTED_PROXY", True)
-        req = self._request({"X-Forwarded-For": "1.2.3.4, 10.0.0.9"})
-        assert ratelimit.ip_do_cliente(req) == "1.2.3.4"
+        monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 1)
+        req = self._request({"X-Forwarded-For": "10.0.0.9"})
+        assert ratelimit.ip_do_cliente(req) == "10.0.0.9"
+
+    async def test_item_forjado_pelo_cliente_nao_vale(self, monkeypatch):
+        """O cliente manda `1.2.3.4`; o proxy acrescenta o IP real à direita."""
+        monkeypatch.setattr(settings, "TRUSTED_PROXY", True)
+        monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 1)
+        req = self._request({"X-Forwarded-For": "1.2.3.4, 198.51.100.7"})
+        assert ratelimit.ip_do_cliente(req) == "198.51.100.7"
+
+    async def test_dois_proxies(self, monkeypatch):
+        monkeypatch.setattr(settings, "TRUSTED_PROXY", True)
+        monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 2)
+        req = self._request({"X-Forwarded-For": "1.2.3.4, 198.51.100.7, 10.0.0.9"})
+        assert ratelimit.ip_do_cliente(req) == "198.51.100.7"
 
 
 class TestContador:
