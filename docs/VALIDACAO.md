@@ -5,7 +5,9 @@ Os testes criam e removem registros e limpam contadores no Redis. O início da s
 recusa ambiente diferente de `test` ou nome de banco sem `test`.
 
 ```sh
-docker compose -f docker-compose.test.yml up -d --wait
+# `-p` é obrigatório: o COMPOSE_PROJECT_NAME do .env venceria o `name:` do arquivo
+# e o compose de teste recriaria os containers de DEV com as portas de teste.
+docker compose -p otto-validation -f docker-compose.test.yml up -d --wait
 . .venv/bin/activate
 export ENV=test
 export DATABASE_URL=postgresql+asyncpg://otto:otto@localhost:55437/otto_test

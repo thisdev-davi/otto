@@ -1,166 +1,175 @@
 # Otto
 
-Inbox de WhatsApp com múltiplos atendentes, agente de IA e transferência para humano.
-O projeto inclui um exemplo fictício de salão de festas: agenda por data, pré-reserva,
-confirmação pela equipe e galeria do espaço.
+Inbox de WhatsApp multiatendente com agente de IA e roteiro sem LLM, aplicado a salões de festas.
 
-O agente consulta conhecimento e agenda; o roteiro determinístico atende sem LLM.
-Ambos usam a mesma ingestão, fila de atendimento e persistência. O copilot sugere uma
-resposta para o atendente e nunca envia sozinho.
+[![Validation](https://github.com/thisdev-davi/otto-salao-de-festas/actions/workflows/ci.yml/badge.svg)](https://github.com/thisdev-davi/otto-salao-de-festas/actions/workflows/ci.yml)
+![Cobertura do backend](https://img.shields.io/badge/cobertura-80%25-brightgreen)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-lightgrey)
 
-## Executar
+Pequenos negócios atendem pelo WhatsApp com duas ou três pessoas no mesmo número. Nesse cenário, conversas se perdem, dois atendentes respondem o mesmo cliente e o preço que o bot passa não bate com a agenda. O Otto põe a equipe numa inbox compartilhada e coloca na frente um atendimento automático que **nunca inventa preço**: valor e disponibilidade saem de uma agenda transacional, o bot só **segura** uma data, e quem confirma a reserva é sempre um humano.
 
-Precisa de Python 3.12, Node.js 22, Docker Compose e `uv` ou `pip`.
-
-```sh
-python3 -m venv .venv
-. .venv/bin/activate
-pip install --require-hashes -r requirements-dev.lock
-cp .env.example .env
-cp frontend/.env.local.example frontend/.env.local
-# Preencha SECRET_KEY e EVOLUTION_API_KEY com segredos próprios.
-cd frontend
-npm ci
-cd ..
-./dev.sh
-```
-
-Abra [localhost:3002](http://localhost:3002). A API usa a porta 8001,
-PostgreSQL 5437 e Redis 6382. `dev.sh` aplica as migrations e inicia API, worker e frontend.
-Os exemplos de ambiente usam essas mesmas portas.
-
-Para criar uma conta, no ambiente virtual:
-
-```sh
-python scripts/criar_conta.py --nome "Salão Exemplo" --email admin@example.com
-```
-
-O script gera a senha. Para explorar a interface com dados fictícios, sem parear WhatsApp:
-
-```sh
-python seed_test_account.py
-```
-
-Esse seed **recria a conta Otto Teste**, com login `teste@otto.com` e senha `teste1234`.
-Use somente no seu banco local de testes; ele deixa o bot desligado. As conversas
-preenchidas permitem explorar a interface, mas não simulam transporte WhatsApp.
-
-### WhatsApp e IA
-
-O WhatsApp real exige Evolution externo, pareamento e webhook público alcançável pela
-Evolution. Configure `EVOLUTION_URL`, `EVOLUTION_API_KEY` e `WEBHOOK_BASE_URL`.
-Para executar Evolution por Compose, informe uma imagem que você possa obter/construir:
-
-```sh
-EVOLUTION_IMAGE=seu-registry/evolution:sua-versao WITH_EVOLUTION=1 ./dev.sh
-```
-
-A antiga imagem `evolution-api-lid:2.2.3` era local e não é uma dependência baixável
-presumida. A interface pode ser explorada sem ela; envio e recebimento reais precisam
-do serviço configurado.
-
-`LLM_PROVIDER=stub` permite testar o contrato de triagem sem chamadas pagas. O stub
-não substitui o transporte WhatsApp nem demonstra a qualidade semântica de um modelo.
-Agente, embeddings e transcrição usam as chaves e provedores configurados na conta.
+O atendimento automático tem dois "cérebros" que você troca no painel. O **agente de IA** conversa livremente, com persona, RAG e memória do cliente. O **roteiro** é determinístico, segue um fluxo desenhado em JSON e tem custo zero por conversa. Os dois entregam o mesmo contrato de decisão e passam pelo mesmo código de envio, encaminhamento e persistência.
 
 ![Inbox do Otto com dados fictícios](docs/images/inbox.png)
 
 ## Como funciona
 
+| Etapa | O que acontece | Onde |
+|---|---|---|
+| 1. Entrada | O webhook do WhatsApp chega com um segredo **por conexão** na URL; é ele que decide o tenant, nunca o corpo | `api/webhooks.py`, `services/channels.py` |
+| 2. Ingestão | A mensagem é gravada de forma idempotente e sai do request para o Celery | `services/ingestion.py`, `tasks/` |
+| 3. Decisão | Agente de IA **ou** roteiro, conforme o modo do tenant, devolvendo a mesma estrutura | `ai/llm.py`, `flow/engine.py` |
+| 4. Agenda | Preço e disponibilidade vêm de `salao_agenda.resolver`, a única fonte de verdade | `services/salao_agenda.py` |
+| 5. Ação | O bot pode segurar uma data por 48 h (pré-reserva atômica) ou mandar a galeria | `services/salao_acoes.py` |
+| 6. Equipe | Handoff para a fila, captura por um atendente, aviso em tempo real por WebSocket | `services/assignment.py`, `api/ws.py` |
+| 7. Confirmação | Um humano confirma a reserva e, se quiser, avisa o cliente pelo WhatsApp | `services/salao_aviso.py` |
+
 ```text
-WhatsApp → adapter de canal → FastAPI → PostgreSQL
-                                ↓
+WhatsApp → adapter de canal → FastAPI → PostgreSQL ← Next.js (API + WebSocket)
+                                 ↓
                           Redis / Celery
-                                ↓
-                     fluxo ou agente de IA
-                                ↓
-                    ações de agenda / handoff
-                                ↓
-                      adapter → WhatsApp
-
-Next.js ← WebSocket / API ← PostgreSQL + mídia local ou S3 privado
+                                 ↓
+                 roteiro determinístico  |  agente de IA
+                                 ↓
+                 agenda (preço/data) · pré-reserva · handoff
+                                 ↓
+                         adapter → WhatsApp
 ```
 
-- Ingestão idempotente: reentregas não criam outra mensagem.
-- Captura, encaminhamento e reserva disputados no banco: duas requisições concorrentes
-  não ganham a mesma conversa ou data.
-- Preço e disponibilidade vêm da agenda transacional. O agente cria pré-reserva;
-  a confirmação é humana.
-- Dados coletados se acumulam e a persona define a condução. O bot continua ajudando
-  após encaminhar, até alguém assumir, respeitando os limites de uso.
-- RAG usa PostgreSQL/pgvector; falha de embedding permite busca textual. Fontes e
-  limites de relevância não garantem que uma resposta do modelo esteja correta.
-- Arquivos são servidos após autorização da aplicação. O bucket S3 permanece privado;
-  arquivos locais existentes continuam legíveis durante a migração.
+<table>
+  <tr>
+    <td><img src="docs/images/agenda.png" alt="Agenda com preço por data e reservas"></td>
+    <td><img src="docs/images/simulador.png" alt="Simulador do roteiro consultando a agenda real"></td>
+  </tr>
+  <tr>
+    <td align="center">Agenda: preço por data, bloqueios e reservas</td>
+    <td align="center">Simulador do roteiro: preço lido da agenda real, sem escrever nada</td>
+  </tr>
+</table>
 
-## Auditoria por conta
+## Decisões de engenharia
 
-Administradores acessam **Configurações → Auditoria**, com filtros, paginação e CSV.
-O contrato e os limites operacionais estão em [Auditoria](docs/AUDITORIA.md).
-A trilha registra ator, ação, recurso, resultado, motivo e correlação; alterações no
-banco e seu registro são atômicos. Intenção e resultado dos envios externos são
-separados: um timeout pode deixar resultado incerto, sem reenvio automático.
+As regras abaixo estão no [`CLAUDE.md`](CLAUDE.md) como invariantes do projeto, cada uma com o bug que ela previne.
 
-O registro não copia conversas, prompts ou segredos. IPs são mascarados; a retenção
-é de 180 dias, com limpeza coordenada enquanto a API estiver ativa e na inicialização.
-Esse prazo vale para a auditoria, não para conversas e anexos. O produto não permite
-editar ou apagar eventos; administradores diretos do banco continuam tendo poder
-sobre seus dados. Auditoria auxilia a rastreabilidade, sem certificar conformidade
-com a LGPD. Falhas de registro de leitura são sinalizadas no log técnico; alterações
-no banco falham se não puderem registrar auditoria.
+- **Concorrência resolvida no banco, não em Python.** Capturar uma conversa é um `UPDATE ... WHERE assigned_user_id IS NULL`. Segurar uma data é um `INSERT ... ON CONFLICT DO NOTHING` contra um índice único **parcial** (`status IN ('pre_reservada','confirmada')`), o que libera a data de reservas canceladas sem apagar o histórico. Os dois têm teste de corrida com `asyncio.gather`.
+- **O roteiro avança por transição disputada.** Não existe debounce: cada mensagem dispara um turno. O nó atual só avança com `UPDATE ... WHERE turno = :lido`, e quem perde a corrida não envia nada. Assim o cliente nunca recebe o menu duas vezes.
+- **Uma implementação só da disponibilidade.** O front lê `motivo`/`livre` prontos do backend e nunca deduz "livre" a partir do preço. Uma segunda implementação da regra, quando diverge, aparece como preço errado dito ao cliente.
+- **Adapter de canal isolado.** O código da Evolution API (WhatsApp não oficial, sujeito a ban) mora só em `channels/whatsapp.py`. Trocar de provider é trocar uma classe na factory.
+- **Multi-tenant por linha, com defesa em profundidade.** `tenant_id` entra em toda query, e o tenant de um evento externo vem de um segredo comparado com `hmac.compare_digest`.
+- **Mídia não confiável.** O `Content-Type` servido passa por uma allow-list, a URL de mídia é assinada e de curta duração (sem JWT na query), e o download de avatar só aceita HTTPS para IP público, como proteção contra SSRF.
+- **Sem agendador.** Pré-reserva vencida e conversa inativa são resolvidas de forma preguiçosa, na leitura. O projeto não tem `celery beat` de propósito.
+- **Auditoria transacional.** Toda alteração em tabela com `tenant_id` registra ator, ação e resultado por trigger, na mesma transação, sem copiar conversa nem segredo.
 
-## Conteúdo e operação
+## Avaliação do agente
 
-Persona, conhecimento e roteiro de exemplo vivem em `conteudo/`.
+Teste de unidade não prova que um LLM respeita a agenda. Para isso existe `evals/`: um conjunto de conversas fixas, rodado contra um modelo real e conferido por checagens determinísticas. As checagens cobrem quatro garantias:
+
+- valor citado sempre presente na agenda;
+- nenhuma confirmação de reserva;
+- pré-reserva só para data livre;
+- encaminhamento quando o cliente pede uma pessoa.
+
+Os cenários incluem prompt injection (pedido de "desconto aprovado pelo gerente" e mensagem que finge ser do sistema).
 
 ```sh
-python scripts/sincronizar_conteudo.py --check
-python scripts/sincronizar_conteudo.py --conta "Salão Exemplo" --dry-run
-python scripts/sincronizar_conteudo.py --conta "Salão Exemplo"
-scripts/otto.sh status
+python -m evals.rodar --provider anthropic --vezes 3   # gera evals/RESULTADO.md
 ```
 
-`scripts/otto.sh restart` **descarta a fila pendente** por convenção de desenvolvimento.
-Não use esse comando como estratégia de atualização em produção. No deploy, migrations
-são uma etapa explícita e workers devem encerrar com tratamento das tarefas pendentes.
+O prompt avaliado é o de produção. A persona e o conhecimento vêm de `conteudo/`, e o bloco de agenda sai do próprio `salao_contexto.bloco_agenda`.
 
-## Testes
+## Estrutura do repositório
 
-A suíte exige banco e Redis exclusivos, `ENV=test` e impede HTTP externo real.
-O passo a passo está em [Validação](docs/VALIDACAO.md).
+```text
+otto-salao-de-festas/
+├── app/
+│   ├── api/         rotas FastAPI finas, delegando aos services
+│   ├── services/    regras de negócio: captura, ingestão, agenda, bot, auditoria
+│   ├── flow/        motor do roteiro determinístico, validador e simulador
+│   ├── ai/          cliente LLM multi-provider, RAG (pgvector), transcrição
+│   ├── channels/    adapter do WhatsApp (único lugar que conhece a Evolution)
+│   ├── tasks/       workers Celery
+│   └── models/      SQLAlchemy
+├── alembic/         migrations (inclui triggers de auditoria e índices parciais)
+├── conteudo/        persona, base de conhecimento e roteiro do exemplo, versionados
+├── evals/           avaliação offline do agente
+├── frontend/        Next.js: inbox, agenda, fluxo, relatórios, configurações
+├── tests/           ~630 testes de backend com PostgreSQL e Redis reais
+└── docs/            produto, guias, deploy, validação e auditoria
+```
+
+## Tecnologias
+
+| Camada | Tecnologia |
+|---|---|
+| Backend | Python 3.12, FastAPI e SQLAlchemy async, ponta a ponta |
+| Workers | Celery e Redis (fila e pub/sub do tempo real) |
+| Banco | PostgreSQL 16 com pgvector, migrations com Alembic |
+| Frontend | Next.js 15, React 19, TypeScript estrito, Tailwind e Radix |
+| IA | Anthropic, Gemini e provedores compatíveis com OpenAI, além de embeddings e transcrição de áudio |
+| Canal | WhatsApp via Evolution API |
+| Qualidade | pytest com cobertura, ruff, ESLint, `node:test`, checagem de contraste WCAG e gitleaks |
+| CI | GitHub Actions: lint, migrations em banco vazio, testes, build do front e varredura de segredos |
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [CLAUDE.md](CLAUDE.md) | invariantes de arquitetura e convenções, com o porquê de cada uma |
+| [Segurança](SEGURANCA.md) | laudo de segurança, correções e riscos aceitos |
+| [Projeto](docs/produto/OTTO_PROJETO.md) | visão de produto, escopo e roadmap |
+| [Plataforma](docs/produto/PLATAFORMA.md) | como derivar um sistema de outro nicho a partir da base |
+| [Produto e venda](docs/produto/PRODUTO-E-VENDA.md) | roteiro sem IA × agente com IA: o que cada um faz e quanto custa |
+| [Guia do fluxo](docs/guias/GUIA-FLUXO-SALAO.md) | como ler, alterar e publicar o roteiro |
+| [Guia da persona](docs/guias/GUIA-PERSONA-SALAO.md) e [Guia de conteúdo](docs/guias/GUIA-CONTEUDO-AGENTE.md) | como escrever persona e conhecimento para o agente |
+| [Auditoria](docs/AUDITORIA.md) | contrato da trilha de auditoria por conta |
+| [Validação](docs/VALIDACAO.md) | como rodar a suíte isolada |
+| [Deploy](docs/DEPLOY.md) | roteiro para Render, Neon e S3 (preparado, não executado) |
+
+## Rodar localmente
+
+Requisitos: Python 3.12, Node.js 22, Docker Compose e `uv` (ou `pip`).
 
 ```sh
-pytest -q
-ruff check .
-ruff format --check .
-cd frontend
-npm run check
-npm run build
+python -m venv .venv && . .venv/bin/activate
+pip install --require-hashes -r requirements-dev.lock
+cp .env.example .env                       # preencha SECRET_KEY e EVOLUTION_API_KEY
+cp frontend/.env.local.example frontend/.env.local
+(cd frontend && npm ci)
+./dev.sh                                   # Postgres, Redis, migrations, API, worker e front
 ```
 
-A CI instala dependências pelo lock, aplica migrations em PostgreSQL/pgvector
-isolado e verifica backend, tipos, tokens, contraste e build. Resultados locais
-medidos ficam em [Validação](docs/VALIDACAO.md), sem confundir testes automatizados
-com ensaio de WhatsApp ou deploy real.
+Abra [localhost:3002](http://localhost:3002). Para explorar a interface com dados fictícios, sem parear um WhatsApp, rode `python seed_test_account.py`. O seed **recria** a conta "Otto Teste" (login `teste@otto.com`, senha `teste1234`), então use só em banco local. Com `LLM_PROVIDER=stub`, o agente roda sem chamadas pagas.
 
-## Deploy e estado
+O WhatsApp real exige uma Evolution API e um webhook público. Veja `EVOLUTION_*` e `WEBHOOK_BASE_URL` no `.env.example`.
 
-A configuração em `render.yaml` prepara frontend, API, worker e Redis no Render,
-com banco Neon e armazenamento compatível com S3. Evolution é externo. Não há VPS
-presumida e a stack completa não é apresentada como gratuita.
+### Operação
 
-[Deploy](docs/DEPLOY.md) descreve segredos, TLS, conexões direta/aplicação, mídia e
-verificação de saúde. A configuração foi preparada para implantação futura;
-nenhum deploy remoto foi executado nesta consolidação.
+```sh
+python scripts/criar_conta.py --nome "Salão Exemplo" --email admin@example.com   # gera a senha
+python scripts/sincronizar_conteudo.py --conta "Salão Exemplo" --dry-run          # publica conteudo/
+scripts/otto.sh restart
+```
 
-[Segurança](SEGURANCA.md) distingue o laudo
-histórico das verificações atuais. Avaliação pós-atendimento permanece em
-[Melhorias](docs/MELHORIAS.md).
+`scripts/otto.sh restart` **descarta a fila pendente** do Celery: é uma convenção de desenvolvimento, para o worker não reprocessar tarefas de um código que já mudou. Não use isso como estratégia de atualização em produção.
+
+### Testes
+
+```sh
+docker compose -p otto-validation -f docker-compose.test.yml up -d --wait
+pytest --cov=app        # variáveis de ambiente em docs/VALIDACAO.md
+ruff check . && ruff format --check .
+cd frontend && npm run check && npm run build
+```
+
+## Roadmap
+
+- **Avaliação pós-atendimento**: pesquisa de satisfação ao encerrar, com nota nos relatórios ([Melhorias](docs/MELHORIAS.md)).
+- **Leitura de imagem**: hoje a foto recebida é exibida para a equipe e o bot avisa que não lê imagem.
+- **Sessão em cookie `httpOnly`** e ticket de uso único no WebSocket (riscos aceitos em [Segurança](SEGURANCA.md)).
 
 ## Desenvolvimento e licença
 
-O desenvolvimento usa assistência de Claude Code/Codex. Contratos, decisões,
-revisão do código, testes e verificações de interface fazem parte do processo;
-a documentação registra o que foi medido e as limitações da validação.
+Desenvolvido com assistência de IA. As decisões de arquitetura, a revisão do código e os testes são meus; o [`CLAUDE.md`](CLAUDE.md) é o guia de engenharia que orienta esse trabalho.
 
-MIT para o material próprio ou autorizado, com avisos de terceiros preservados.
+[MIT](LICENSE). A conta, as conversas e o "Salão Exemplo" usados nas imagens são fictícios.
