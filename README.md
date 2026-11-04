@@ -169,8 +169,6 @@ cd frontend && npm run check && npm run build
 - **Leitura de imagem**: hoje a foto recebida é exibida para a equipe e o bot avisa que não lê imagem.
 - **Sessão em cookie `httpOnly`** e ticket de uso único no WebSocket (riscos aceitos em [Segurança](SEGURANCA.md)).
 
-## Desenvolvimento e licença
-
-Desenvolvido com assistência de IA. As decisões de arquitetura, a revisão do código e os testes são meus; o [`CLAUDE.md`](CLAUDE.md) é o guia de engenharia que orienta esse trabalho.
+## Licença
 
 [MIT](LICENSE). A conta, as conversas e o "Salão Exemplo" usados nas imagens são fictícios.
