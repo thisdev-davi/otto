@@ -18,7 +18,7 @@ import httpx
 import pytest_asyncio
 from sqlalchemy import text
 
-from app.channels.whatsapp import EvolutionProvider
+from app.channels.whatsapp import EvolutionProvider, _url_publica
 from app.core.database import AsyncSessionLocal
 from app.main import app
 from app.services import avatars, media_links
@@ -150,6 +150,12 @@ def _cliente_falso(monkeypatch, url_resp, imagem_resp) -> None:
         "app.channels.whatsapp.httpx.AsyncClient", lambda *a, **kw: ClienteFalso()
     )
 
+    # O host falso "cdn" não resolve; a checagem de IP tem testes próprios abaixo.
+    async def _publica(url: str) -> bool:
+        return True
+
+    monkeypatch.setattr("app.channels.whatsapp._url_publica", _publica)
+
 
 class TestDownloadDoProvider:
     async def test_imagem_valida_desce(self, monkeypatch) -> None:
@@ -208,6 +214,50 @@ class TestDownloadDoProvider:
 
         monkeypatch.setattr("app.channels.whatsapp.httpx.AsyncClient", explode)
         assert await EvolutionProvider().fetch_avatar({}, "5@lid") is None
+
+
+class TestUrlDaFoto:
+    """SSRF: a URL vem do Evolution, então só HTTPS para IP público passa."""
+
+    async def test_ip_publico_https_passa(self) -> None:
+        assert await _url_publica("https://8.8.8.8/foto.jpg")
+
+    async def test_rede_interna_e_metadata_sao_recusadas(self) -> None:
+        for url in (
+            "https://127.0.0.1/x",
+            "https://10.0.0.5/x",
+            "https://192.168.1.1/x",
+            "https://169.254.169.254/latest/meta-data",
+            "https://[::1]/x",
+        ):
+            assert not await _url_publica(url), url
+
+    async def test_sem_https_e_recusada(self) -> None:
+        assert not await _url_publica("http://8.8.8.8/x")
+        assert not await _url_publica("file:///etc/passwd")
+
+    async def test_url_interna_nao_vai_a_rede(self, monkeypatch) -> None:
+        class ClienteFalso:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return False
+
+            async def post(self, *args, **kwargs):
+                return _RespostaFalsa(
+                    payload={"profilePictureUrl": "https://127.0.0.1/x"}
+                )
+
+            async def get(self, *args, **kwargs):
+                raise AssertionError("GET para rede interna")
+
+        monkeypatch.setattr(
+            "app.channels.whatsapp.httpx.AsyncClient", lambda *a, **kw: ClienteFalso()
+        )
+        assert (
+            await EvolutionProvider().fetch_avatar({"instance": "i"}, "5@lid") is None
+        )
 
 
 # ─────────────────────────── quem pode ver ───────────────────────────

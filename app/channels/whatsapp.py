@@ -1,9 +1,12 @@
+import asyncio
 import base64
 import hmac
+import ipaddress
 import json
 import logging
 import secrets
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 import httpx
 from app.channels.base import ChannelProvider
 from app.channels.types import (
@@ -186,6 +189,29 @@ def _timestamp(bruto) -> datetime:
 # A foto de perfil é imagem e nada além disso. Subconjunto da allow-list de anexos, e não
 # ela inteira: aqui não existe caso de uso para PDF nem para vídeo.
 _AVATAR_ACEITOS = frozenset({"image/jpeg", "image/png", "image/webp"})
+
+
+async def _url_publica(url: str) -> bool:
+    """A URL da foto vem do Evolution, não de nós: só HTTPS para IP público.
+
+    Sem isto, um Evolution comprometido (ou uma resposta forjada) apontava o `GET` para
+    `169.254.169.254`, `localhost` ou a rede interna — SSRF a partir do worker. O redirect
+    fica desligado pelo mesmo motivo: o destino final também teria de passar por aqui.
+    """
+    # ponytail: checa o DNS antes do GET, então um rebinding entre as duas resoluções
+    # passa; fixar o IP resolvido no transporte do httpx fecha isso se um dia importar.
+    partes = urlsplit(url)
+    if partes.scheme != "https" or not partes.hostname:
+        return False
+    try:
+        enderecos = await asyncio.get_running_loop().getaddrinfo(
+            partes.hostname, partes.port or 443
+        )
+    except OSError:
+        return False
+    return bool(enderecos) and all(
+        ipaddress.ip_address(info[4][0]).is_global for info in enderecos
+    )
 
 
 class EvolutionProvider(ChannelProvider):
@@ -456,9 +482,9 @@ class EvolutionProvider(ChannelProvider):
                 if resp.status_code not in (200, 201):
                     return None
                 url = (resp.json() or {}).get("profilePictureUrl")
-                if not url:
+                if not url or not await _url_publica(url):
                     return None
-                imagem = await client.get(url, timeout=30.0, follow_redirects=True)
+                imagem = await client.get(url, timeout=30.0, follow_redirects=False)
         except Exception as exc:
             log.warning("fetch_avatar falhou: %s", exc)
             return None
