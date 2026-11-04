@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# Sprintfy agent evidence (auto-generated)
+.sprintfy/
+
+# Ferramentas locais e artefatos de runtime
+.claude/
+data/
+frontend/tsconfig.tsbuildinfo
+graphify-out/
+
+# Skills de desenvolvimento: o lock e versionado, o conteudo baixado nao.
+.agents/
+
+# Configuração e evidências locais
+frontend/.env.local
+frontend/.next-*/
+*.bundle
+skills-lock.json
+scripts/.termos_privados.txt

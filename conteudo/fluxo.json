@@ -1,0 +1,333 @@
+{
+  "nome": "Atendimento padrão — salão de festas",
+  "inicio": "horario",
+  "config": {
+    "no_handoff": "chamar_equipe",
+    "max_invalidas": 2,
+    "nao_entendi": "Desculpa, não entendi 😅 Pode responder com o número da opção?",
+    "palavras_atendente": [
+      "atendente",
+      "humano",
+      "pessoa de verdade",
+      "falar com alguem",
+      "falar com alguém",
+      "falar com uma pessoa"
+    ]
+  },
+  "nos": {
+    "horario": {
+      "tipo": "horario",
+      "pos": [880, 40],
+      "saidas": { "dentro": "saudacao", "fora": "fora_do_ar" }
+    },
+    "saudacao": {
+      "tipo": "mensagem",
+      "pos": [1120, 152],
+      "texto": "Oi! 👋 Aqui é a Bia, do Salão Exemplo.|||Posso te ajudar com datas, valores, fotos e dúvidas sobre o espaço.",
+      "proximo": "menu_principal"
+    },
+    "fora_do_ar": {
+      "tipo": "mensagem",
+      "pos": [640, 152],
+      "texto": "Oi! 👋 Aqui é a Bia, do Salão Exemplo.|||A equipe atende de segunda a sexta, das 9h às 18h — mas eu já adianto bastante coisa com você agora 😉",
+      "proximo": "menu_principal"
+    },
+    "menu_principal": {
+      "tipo": "menu",
+      "pos": [880, 264],
+      "texto": "O que você prefere?",
+      "campo": "assunto",
+      "opcoes": [
+        { "rotulo": "Ver datas e valores", "sinonimos": ["data", "disponibilidade", "quanto custa", "quanto fica", "quanto sai", "preco", "orcamento", "qual o valor", "qual valor", "o valor da", "valor da data", "valor do dia", "valores", "saber o valor", "me passa o valor"], "proximo": "perguntar_data" },
+        { "rotulo": "Ver fotos do espaço", "sinonimos": ["foto", "imagem", "como e o salao", "conhecer o espaco"], "proximo": "anuncia_fotos" },
+        { "rotulo": "Tirar dúvidas sobre o espaço", "sinonimos": ["duvida", "cabe", "quantas pessoas", "capacidade", "lotacao", "incluso", "inclui", "estrutura", "regra", "endereco", "onde fica", "estacionamento", "piscina", "cozinha", "churrasqueira", "buffet", "bebida", "som", "acessibilidade", "espaco infantil"], "proximo": "menu_duvidas" },
+        { "rotulo": "Agendar uma visita", "sinonimos": ["visita", "visitar", "conhecer pessoalmente"], "proximo": "visita_info" },
+        { "rotulo": "Já tenho uma reserva", "sinonimos": ["minha reserva", "ja reservei", "confirmar reserva", "remarcar", "cancelar"], "proximo": "handoff_cliente" },
+        { "rotulo": "Falar com um atendente", "sinonimos": ["equipe"], "proximo": "chamar_equipe" }
+      ]
+    },
+
+    "anuncia_fotos": {
+      "tipo": "mensagem",
+      "pos": [560, 400],
+      "texto": "Tenho sim! Olha só ✨",
+      "proximo": "enviar_fotos"
+    },
+    "enviar_fotos": {
+      "tipo": "acao",
+      "pos": [560, 512],
+      "acao": "fotos",
+      "saidas": { "ok": "menu_pos_fotos", "falhou": "handoff_fotos" }
+    },
+    "handoff_fotos": {
+      "tipo": "handoff",
+      "pos": [820, 512],
+      "texto": "Vou pedir para um atendente te mandar as fotos por aqui 😊",
+      "resumo": "O cliente pediu fotos e o roteiro não enviou — ou a galeria está vazia, ou as fotos já tinham sido enviadas nesta conversa. Confira em Configurações › Fotos do espaço."
+    },
+    "menu_pos_fotos": {
+      "tipo": "menu",
+      "pos": [560, 624],
+      "texto": "O que achou? 😊",
+      "opcoes": [
+        { "rotulo": "Ver datas e valores", "sinonimos": ["data", "valor", "preco", "quanto custa"], "proximo": "perguntar_data" },
+        { "rotulo": "Tirar dúvidas sobre o espaço", "sinonimos": ["duvida", "cabe", "capacidade", "incluso", "inclui", "estrutura", "regra", "piscina", "buffet", "som"], "proximo": "menu_duvidas" },
+        { "rotulo": "Agendar uma visita", "sinonimos": ["visita", "visitar"], "proximo": "visita_info" },
+        { "rotulo": "Falar com um atendente", "sinonimos": ["equipe"], "proximo": "chamar_equipe" }
+      ]
+    },
+
+    "menu_duvidas": {
+      "tipo": "menu",
+      "pos": [40, 400],
+      "texto": "Sobre o que você quer saber?",
+      "campo": "duvida",
+      "opcoes": [
+        { "rotulo": "Quantas pessoas cabem", "sinonimos": ["cabe", "capacidade", "quantas pessoas", "lotacao", "convidados"], "proximo": "resp_capacidade" },
+        { "rotulo": "O que está incluso na locação", "sinonimos": ["incluso", "inclui", "mesa", "cadeira", "limpeza", "louca", "talher", "toalha"], "proximo": "resp_incluso" },
+        { "rotulo": "Estrutura do espaço", "sinonimos": ["estrutura", "cozinha", "piscina", "estacionamento", "churrasqueira", "banheiro", "espaco infantil"], "proximo": "resp_estrutura" },
+        { "rotulo": "Regras da casa", "sinonimos": ["regra", "som", "bebida", "fumar", "animal", "decoracao", "buffet", "confete"], "proximo": "resp_regras" },
+        { "rotulo": "Endereço e horários", "sinonimos": ["endereco", "onde fica", "localizacao", "horario", "que horas"], "proximo": "resp_endereco" },
+        { "rotulo": "Outra dúvida", "sinonimos": ["outro assunto"], "proximo": "chamar_equipe_duvida" }
+      ]
+    },
+    "resp_capacidade": {
+      "tipo": "mensagem",
+      "pos": [40, 512],
+      "texto": "Cabem 220 convidados sentados, com jantar servido à mesa 🍽️|||No formato coquetel sobe para 320. A lotação máxima autorizada pelo corpo de bombeiros é de 350 pessoas, contando convidados, equipe de buffet e fornecedores.|||Acima de 150 pessoas, o corpo de bombeiros exige brigadista — ele é contratado à parte.",
+      "proximo": "menu_apos_duvida"
+    },
+    "resp_incluso": {
+      "tipo": "mensagem",
+      "pos": [40, 624],
+      "texto": "A locação é do espaço por um dia inteiro, das 10h às 3h da manhã seguinte ⏰|||Já vem com: salão climatizado, mesas e cadeiras para até 220 pessoas, churrasqueira, área externa, piscina, espaço infantil, sala de noiva, estacionamento com 60 vagas, portaria e limpeza pós-evento.|||Não entram na locação: buffet, bebidas, bolo, decoração, DJ, louça, talheres e toalhas de mesa — isso você contrata com o fornecedor que preferir.",
+      "proximo": "menu_apos_duvida"
+    },
+    "resp_estrutura": {
+      "tipo": "mensagem",
+      "pos": [40, 736],
+      "texto": "O salão tem 420 m² construídos, climatizado, pé-direito de 5,2 metros e piso de porcelanato ✨|||Tem cozinha de apoio equipada (fogão industrial, forno combinado, geladeira, freezer e bancadas de inox), churrasqueira na área gourmet coberta, piscina adulta e infantil, espaço infantil de 40 m² e sala de noiva.|||A área externa tem 260 m² entre jardim e deck coberto. São cinco banheiros, um deles adaptado, e o acesso é térreo — sem degrau para cadeirante ou carrinho de bebê. O estacionamento é próprio e gratuito, com 60 vagas.",
+      "proximo": "menu_apos_duvida"
+    },
+    "resp_regras": {
+      "tipo": "mensagem",
+      "pos": [40, 848],
+      "texto": "As principais: o som amplificado vai até 1h, por causa da lei de silêncio da cidade 🎶 Depois disso a festa segue com volume reduzido, até o fim do período contratado.|||Buffet externo é liberado e você pode levar a bebida — não há taxa de rolha. A equipe só precisa ser avisada com antecedência para liberar o acesso à cozinha.|||Não são permitidos confete, glitter, papel picado e fogos de artifício. A decoração se fixa com fita de baixa aderência, sem pregar nem furar, e todo material de terceiros sai no mesmo dia.",
+      "proximo": "menu_apos_duvida"
+    },
+    "resp_endereco": {
+      "tipo": "mensagem",
+      "pos": [40, 960],
+      "texto": "Estamos na Rua Exemplo, 100 — Centro 📍|||A locação é por dia inteiro: você entra às 10h para montar e desocupa até as 3h. Não alugamos por período nem por hora.|||Para conhecer pessoalmente, as visitas são de terça a sábado, das 10h às 17h, sempre com hora marcada.",
+      "proximo": "menu_apos_duvida"
+    },
+    "chamar_equipe_duvida": {
+      "tipo": "handoff",
+      "pos": [40, 1072],
+      "texto": "Essa eu prefiro não responder por chute — já chamo um atendente para te explicar direitinho 😊",
+      "resumo": "O cliente tem uma dúvida que o roteiro não cobre. Vale conferir se ela se repete: pode virar uma opção nova em Configurações › Fluxo."
+    },
+    "menu_apos_duvida": {
+      "tipo": "menu",
+      "pos": [300, 736],
+      "texto": "Posso ajudar com mais alguma coisa?",
+      "opcoes": [
+        { "rotulo": "Tirar outra dúvida", "sinonimos": ["outra duvida", "mais uma duvida", "duvida"], "proximo": "menu_duvidas" },
+        { "rotulo": "Ver datas e valores", "sinonimos": ["data", "valor", "preco", "quanto custa"], "proximo": "perguntar_data" },
+        { "rotulo": "Ver fotos do espaço", "sinonimos": ["foto", "imagem"], "proximo": "anuncia_fotos" },
+        { "rotulo": "Agendar uma visita", "sinonimos": ["visita", "visitar"], "proximo": "visita_info" },
+        { "rotulo": "Falar com um atendente", "sinonimos": ["equipe"], "proximo": "chamar_equipe" }
+      ]
+    },
+
+    "visita_info": {
+      "tipo": "mensagem",
+      "pos": [1380, 400],
+      "texto": "Boa ideia conhecer antes 😊 As visitas são de terça a sábado, das 10h às 17h, sempre com hora marcada.|||Dura uns 40 minutos e um atendente acompanha, mostrando o salão, a cozinha e a área externa.",
+      "proximo": "handoff_visita"
+    },
+    "handoff_visita": {
+      "tipo": "handoff",
+      "pos": [1380, 512],
+      "texto": "Vou chamar um atendente para combinar o melhor dia e horário com você 📅",
+      "resumo": "O cliente quer agendar uma visita ao espaço. Janela de visitas: terça a sábado, das 10h às 17h, com hora marcada."
+    },
+    "handoff_cliente": {
+      "tipo": "handoff",
+      "pos": [1640, 400],
+      "texto": "Certo. Vou chamar um atendente para falar com você sobre a sua reserva.",
+      "resumo": "O cliente já tem reserva e quer tratar dela — confirmação, remarcação, cancelamento ou algum problema. Confira a data em Agenda antes de responder.",
+      "prioridade": "alta"
+    },
+    "chamar_equipe": {
+      "tipo": "handoff",
+      "pos": [1900, 400],
+      "resumo": "O cliente saiu do roteiro ou pediu atendimento humano."
+    },
+
+    "perguntar_data": {
+      "tipo": "pergunta",
+      "pos": [880, 1080],
+      "texto": "Perfeito! Para qual data você está pensando? 📅 Pode escrever assim: 15/08/2026.",
+      "campo": "data_desejada",
+      "validacao": "data",
+      "proximo": "consultar_agenda"
+    },
+    "consultar_agenda": {
+      "tipo": "agenda",
+      "pos": [880, 1192],
+      "campo": "data_desejada",
+      "sem_livres": "nenhuma no momento",
+      "saidas": {
+        "livre": "data_livre",
+        "ocupada": "data_ocupada",
+        "bloqueada": "data_indisponivel",
+        "sem_cadastro": "data_sem_agenda",
+        "sem_preco": "chamar_equipe_data",
+        "passado": "data_passada",
+        "agenda_vazia": "chamar_equipe_agenda_vazia"
+      }
+    },
+    "data_livre": {
+      "tipo": "mensagem",
+      "pos": [620, 1304],
+      "texto": "Boa notícia! 🎉 O dia {{data}} está livre.|||O valor dessa data é {{preco}}.",
+      "proximo": "menu_reserva"
+    },
+    "data_ocupada": {
+      "tipo": "mensagem",
+      "pos": [900, 1304],
+      "texto": "Esse dia já está reservado 😕|||As próximas datas livres são:\n\n{{proximas_livres}}",
+      "proximo": "menu_outra_data"
+    },
+    "data_indisponivel": {
+      "tipo": "mensagem",
+      "pos": [1160, 1304],
+      "texto": "Nessa data a casa não está disponível 😕|||As próximas datas livres são:\n\n{{proximas_livres}}",
+      "proximo": "menu_outra_data"
+    },
+    "data_sem_agenda": {
+      "tipo": "mensagem",
+      "pos": [1420, 1304],
+      "texto": "Nessa data a agenda ainda não está aberta 😕|||As próximas datas livres são:\n\n{{proximas_livres}}",
+      "proximo": "menu_outra_data"
+    },
+    "chamar_equipe_data": {
+      "tipo": "handoff",
+      "pos": [1940, 1304],
+      "texto": "Essa data eu preciso confirmar com um atendente — já te respondem por aqui 😊",
+      "resumo": "O cliente perguntou por uma data que está cadastrada na agenda SEM valor definido. Defina o preço em Agenda e o roteiro passa a responder sozinho.",
+      "prioridade": "alta"
+    },
+    "chamar_equipe_agenda_vazia": {
+      "tipo": "handoff",
+      "pos": [2200, 1304],
+      "texto": "Deixa eu confirmar essa data com um atendente — já te respondem por aqui 😊",
+      "resumo": "A agenda não tem NENHUMA data futura à venda, então o roteiro não tinha o que responder nem o que oferecer. Cadastre as datas e os valores em Agenda: enquanto isso, toda pergunta sobre data cai aqui.",
+      "prioridade": "alta"
+    },
+    "data_passada": {
+      "tipo": "mensagem",
+      "pos": [1680, 1304],
+      "texto": "Essa data já passou 😅 Me manda outra?",
+      "proximo": "perguntar_data"
+    },
+    "menu_reserva": {
+      "tipo": "menu",
+      "pos": [620, 1416],
+      "texto": "Quer que eu segure essa data para você?",
+      "opcoes": [
+        { "rotulo": "Quero segurar essa data", "sinonimos": ["pode segurar", "segurar essa data", "garantir", "sim"], "proximo": "segurar_data" },
+        { "rotulo": "Tirar uma dúvida antes", "sinonimos": ["duvida", "incluso", "inclui", "cabe", "capacidade", "estrutura", "regra", "piscina", "buffet", "som"], "proximo": "menu_duvidas" },
+        { "rotulo": "Ver outra data", "sinonimos": ["outra data", "outro dia"], "proximo": "perguntar_data" },
+        { "rotulo": "Falar com um atendente", "sinonimos": ["equipe", "nao"], "proximo": "chamar_equipe" }
+      ]
+    },
+    "menu_outra_data": {
+      "tipo": "menu",
+      "pos": [1030, 1416],
+      "texto": "Quer ver outra data?",
+      "opcoes": [
+        { "rotulo": "Ver outra data", "sinonimos": ["outra data", "outro dia", "sim"], "proximo": "perguntar_data" },
+        { "rotulo": "Tirar dúvidas sobre o espaço", "sinonimos": ["duvida", "incluso", "inclui", "cabe", "capacidade", "estrutura", "regra", "piscina", "buffet"], "proximo": "menu_duvidas" },
+        { "rotulo": "Falar com um atendente", "sinonimos": ["equipe", "nao"], "proximo": "chamar_equipe" }
+      ]
+    },
+    "segurar_data": {
+      "tipo": "acao",
+      "pos": [360, 1528],
+      "acao": "pre_reserva",
+      "campo": "data_desejada",
+      "saidas": { "ok": "confirma_segurada", "falhou": "handoff_data_tomada" }
+    },
+    "handoff_data_tomada": {
+      "tipo": "handoff",
+      "pos": [100, 1640],
+      "texto": "Poxa, essa data acabou de ser fechada 😕 Vou chamar um atendente para te ajudar a achar outra.",
+      "resumo": "O cliente pediu para segurar uma data e o roteiro não conseguiu — a data foi tomada, bloqueada ou o limite diário de pré-reservas do bot estourou. Confira em Agenda.",
+      "prioridade": "alta"
+    },
+    "confirma_segurada": {
+      "tipo": "mensagem",
+      "pos": [360, 1640],
+      "texto": "Pronto! Segurei o dia {{data}} para você por 48 horas ⏳|||Ainda não é confirmação — um atendente vai fechar com você. Só me conta duas coisinhas 😊",
+      "proximo": "perguntar_nome"
+    },
+    "perguntar_nome": {
+      "tipo": "pergunta",
+      "pos": [360, 1752],
+      "texto": "Como é o seu nome?",
+      "campo": "nome",
+      "validacao": "texto",
+      "proximo": "perguntar_tipo_festa"
+    },
+    "perguntar_tipo_festa": {
+      "tipo": "menu",
+      "pos": [360, 1864],
+      "texto": "{{nome}}, que festa você está organizando?",
+      "campo": "tipo_festa",
+      "opcoes": [
+        { "rotulo": "Aniversário", "sinonimos": ["aniver", "niver"], "proximo": "perguntar_convidados" },
+        { "rotulo": "Casamento", "sinonimos": ["noivado", "bodas"], "proximo": "perguntar_convidados" },
+        { "rotulo": "Formatura", "sinonimos": ["colacao"], "proximo": "perguntar_convidados" },
+        { "rotulo": "Confraternização", "sinonimos": ["empresa", "corporativo", "fim de ano"], "proximo": "perguntar_convidados" },
+        { "rotulo": "Outro", "sinonimos": ["outra coisa"], "proximo": "perguntar_convidados" }
+      ]
+    },
+    "perguntar_convidados": {
+      "tipo": "pergunta",
+      "pos": [360, 1976],
+      "texto": "Mais ou menos quantas pessoas?",
+      "campo": "convidados",
+      "validacao": "numero",
+      "proximo": "checar_capacidade"
+    },
+    "checar_capacidade": {
+      "tipo": "condicao",
+      "pos": [360, 2088],
+      "campo": "convidados",
+      "testes": [
+        { "op": "maior", "valor": "320", "proximo": "aviso_acima_da_capacidade" },
+        { "op": "maior", "valor": "220", "proximo": "aviso_coquetel" }
+      ],
+      "senao": "fim"
+    },
+    "aviso_coquetel": {
+      "tipo": "mensagem",
+      "pos": [620, 2088],
+      "texto": "Só um detalhe: acima de 220 pessoas a festa não cabe com jantar servido à mesa. Nesse tamanho funciona em formato coquetel, que comporta até 320 😊",
+      "proximo": "fim"
+    },
+    "aviso_acima_da_capacidade": {
+      "tipo": "mensagem",
+      "pos": [880, 2088],
+      "texto": "Só um detalhe importante: acima de 320 pessoas passa da capacidade da casa. Vou deixar isso anotado para o atendente ver com você antes de qualquer coisa.",
+      "proximo": "fim"
+    },
+    "fim": {
+      "tipo": "fim",
+      "pos": [360, 2200],
+      "texto": "Obrigada, {{nome}}! 🎉 Já passei tudo para a equipe — em breve alguém fala com você por aqui."
+    }
+  }
+}

@@ -1,0 +1,281 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   Tokens de cor do Otto.
+   ESTE É O ÚNICO ARQUIVO DO FRONT ONDE PODE EXISTIR HEX. Em componente, cor
+   vem sempre por token (bg-surface, text-muted, border-line).
+
+   Formato: canais RGB separados por espaço, SEM rgb(). O tailwind.config.ts
+   embrulha em `rgb(var(--x) / <alpha-value>)`, e é isso que preserva os
+   modificadores de opacidade (bg-accent/10). Com `var()` cru o Tailwind
+   descarta o /10 silenciosamente — sem erro e sem warning.
+
+   Consequência para cor dinâmica em style={{}}: usar rgb(var(--avatar-3)),
+   nunca var(--avatar-3) sozinho, que não é uma cor válida neste formato.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Superfícies. `raised` é o que sustenta o tema escuro: no escuro, elevação
+     é superfície mais clara, não sombra — sem esse degrau todo popover some. */
+  --canvas: 244 245 247;
+  --surface: 255 255 255;
+  --surface-raised: 255 255 255;
+  --subtle: 240 241 244;
+
+  /* Scrim do modal. Token próprio porque scrim NÃO é texto: usar `--ink` aqui
+     fazia o véu inverter junto com a rampa e, no escuro, o fundo do modal ficava
+     quase branco. Aqui ele é escuro nos dois temas. */
+  --overlay: 23 25 28;
+
+  /* Bordas. Divisor decorativo (WCAG 1.4.11 não exige contraste); `strong`
+     para régua de tabela e ênfase. */
+  --line: 227 229 233;
+  --line-strong: 208 212 218;
+
+  /* Rampa de texto — os quatro degraus passam AA (4.5:1) sobre surface,
+     canvas e subtle. Neutros sem o azul do slate: o azul da
+     marca fica sozinho. `faint` é o mais claro permitido (4,8:1 sobre subtle). */
+  --ink: 23 25 28;
+  --ink-2: 55 59 66;
+  --muted: 75 80 88;
+  --faint: 100 106 117;
+
+  /* Ação. `fg` é o texto sobre a variante `soft`; `on-accent` é o texto
+     sobre o `solid` (substitui os text-white soltos). */
+  --accent: 37 99 235;
+  --accent-hover: 29 79 196;
+  --accent-soft: 239 244 254;
+  --accent-soft-hover: 187 208 251;
+  --accent-ring: 220 231 253;
+  --accent-fg: 29 79 196;
+  --on-accent: 255 255 255;
+  /* Texto de falha DENTRO do balão accent. Não é o vermelho da paleta: sobre
+     azul, #FCA5A5 dava 2,7:1. Este rosa quase branco dá 4,7:1 e ainda lê como
+     alarme ao lado do branco puro dos outros elementos do balão. */
+  --on-accent-danger: 255 241 242;
+  --on-success: 255 255 255;
+  --on-danger: 255 255 255;
+
+  /* Segunda cor da marca: o azul-claro do círculo de trás do ícone. FUNDO, nunca
+     texto (painel de marca, moldura do QR, passo concluído). Igual nos dois temas,
+     e por isso `on-sky` é escuro nos dois. */
+  --sky: 190 208 249;
+  --on-sky: 23 25 28;
+
+  /* Bolha do agente de IA e do fluxo: lado da equipe, sem competir com o azul de
+     quem é gente. */
+  --bubble-bot: 232 238 247;
+  --bubble-bot-fg: 36 50 71;
+
+  /* Semânticos, tripla solid / soft / fg. `success` é #15803D e não #16A34A
+     porque o verde original dava 3.3:1 — reprovava como texto e sob o
+     text-white do botão Resolver. */
+  --success: 21 128 61;
+  --success-soft: 236 253 245;
+  --success-line: 187 247 208;
+  --success-fg: 21 128 61;
+
+  --danger: 220 38 38;
+  --danger-hover: 185 28 28;
+  --danger-soft: 254 242 242;
+  --danger-line: 252 165 165;
+  --danger-fg: 185 28 28;
+
+  --warning: 180 83 9;
+  --warning-soft: 255 251 235;
+  --warning-line: 253 230 138;
+  --warning-fg: 146 64 14;
+
+  /* Nota interna do atendente — amarelo próprio, não é o âmbar de aviso. */
+  --note-soft: 254 249 195;
+  --note-line: 253 230 138;
+  --note-fg: 133 77 14;
+
+  /* Roxo do agente de IA. */
+  --ai: 124 58 237;
+  --ai-soft: 237 233 254;
+  --ai-fg: 109 40 217;
+
+  --info: 3 105 161;
+
+  /* Marca: INVARIANTE ao tema. Verde do WhatsApp não muda no escuro. */
+  --brand-whatsapp: 37 211 102;
+
+  /* Paleta categórica de dado — série de gráfico. Não é cor de ação: no
+     VolumeChart o azul é "enviadas", não "clicável".
+     Azul + âmbar e não dois azuis: o azul-claro original dava 1,8:1 sobre o
+     card branco (barra praticamente invisível), e nenhum azul claro o bastante
+     para parear com o escuro chega a 3:1. O par azul/âmbar ainda é o mais
+     robusto para daltonismo. */
+  --chart-1: 37 99 235;
+  --chart-2: 180 83 9;
+
+  /* Paleta categórica de avatar (hash do nome). Os dois últimos mudaram:
+     branco sobre #D97706 dava 3.2:1 e sobre #059669 dava 3.8:1. */
+  --avatar-1: 37 99 235;
+  --avatar-2: 124 58 237;
+  --avatar-3: 219 39 119;
+  --avatar-4: 220 38 38;
+  --avatar-5: 180 83 9;
+  --avatar-6: 4 120 87;
+
+  /* Sombras como valor inteiro: <alpha-value> só substitui em COR, então
+     box-shadow não pode usar o formato de canais acima. */
+  /* Escala de sombra: card quase plano (só o que está por cima flutua), `soft` para
+     o hover de card clicável, `pop` para menu e diálogo. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 8px -2px rgba(16, 24, 40, 0.08);
+  --shadow-card-lg: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-pop-sm: 0 6px 20px rgba(20, 30, 80, 0.12);
+  --shadow-pop: 0 0 0 1px rgba(16, 24, 40, 0.06), 0 12px 32px -8px rgba(16, 24, 40, 0.18);
+  /* Botão sólido: brilho de 1px no topo + sombra curta. O halo colorido de 16px saiu. */
+  --shadow-accent: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(16, 24, 40, 0.14);
+  --shadow-success: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(16, 24, 40, 0.14);
+
+  color-scheme: light;
+}
+
+/* ---------------------------------------------------------------------------
+   Tema escuro.
+
+   NÃO é o claro espelhado. A regra que mantém o par consistente:
+     `X`     = preenchimento sólido, sempre com `on-X` por cima
+     `X-fg`  = COR DE TEXTO sobre superfície/soft
+   Só o `-fg` inverte no escuro. Os sólidos (accent, success, danger) ficam
+   IGUAIS nos dois temas justamente porque já passam com texto branco — assim
+   `bg-accent text-on-accent` funciona sem ramo por tema.
+
+   Consequência prática na migração: texto que hoje é `text-accent` sobre
+   `bg-accent-soft` precisa virar `text-accent-fg`. Sobre o soft escuro, o
+   sólido não tem contraste nenhum.
+   --------------------------------------------------------------------------- */
+
+.dark {
+  --canvas: 15 16 18;
+  --surface: 22 24 27;
+  --surface-raised: 28 30 34;
+  --subtle: 31 33 37;
+
+  /* Quase preto: sobre um fundo já escuro, o scrim precisa ser mais escuro que a
+     `canvas` para escurecer alguma coisa. */
+  --overlay: 5 6 7;
+
+  --line: 44 47 53;
+  --line-strong: 58 62 69;
+
+  --ink: 236 238 241;
+  --ink-2: 208 212 218;
+  --muted: 167 173 182;
+  --faint: 138 144 153;
+
+  --accent-soft: 23 35 64;
+  --accent-soft-hover: 31 49 96;
+  --accent-ring: 30 58 138;
+  --accent-fg: 147 180 251;
+
+  --success-soft: 15 42 29;
+  --success-line: 22 101 52;
+  --success-fg: 74 222 128;
+
+  --danger-soft: 42 20 22;
+  --danger-line: 127 29 29;
+  --danger-fg: 252 165 165;
+
+  --warning-soft: 42 31 12;
+  --warning-line: 120 53 15;
+  --warning-fg: 252 211 77;
+
+  --note-soft: 42 37 16;
+  --note-line: 87 66 15;
+  --note-fg: 253 230 138;
+
+  --bubble-bot: 29 37 50;
+  --bubble-bot-fg: 213 222 235;
+
+  --ai-soft: 34 26 58;
+  --ai-fg: 196 181 253;
+
+  --info: 125 211 252;
+
+  /* Barras de gráfico sobre fundo escuro: os dois tons do claro afundam. */
+  --chart-1: 59 130 246;
+  --chart-2: 251 191 36;
+
+  /* Sombra preta some no escuro — a elevação real vem de --surface-raised.
+     Estas só ancoram o elemento, com alpha bem maior. */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-card-lg: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-pop-sm: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 18px 40px rgba(0, 0, 0, 0.6);
+  --shadow-accent: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-success: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  /* Faz scrollbar nativa, <select> nativo e autofill seguirem o tema. */
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------------------
+   Animações dos overlays do Radix (data-state=open/closed).
+   À mão em vez de adicionar tailwindcss-animate: são 4 keyframes e o plugin
+   traria um vocabulário inteiro para isto.
+   --------------------------------------------------------------------------- */
+
+@keyframes otto-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes otto-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes otto-pop-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-2px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+/* Igual ao de cima, mas repetindo o translate que CENTRALIZA o diálogo.
+   `animation` com `transform` substitui o transform da classe pelo tempo inteiro da
+   animação. Como o diálogo é centralizado por `-translate-x-1/2 -translate-y-1/2`, um
+   keyframe que só diz `scale()` o faz aparecer com o canto superior esquerdo no meio da
+   tela — meia largura à direita e meia altura abaixo do lugar certo — e saltar para a
+   posição no fim. Quanto maior o diálogo, mais visível o salto.
+   Keyframe separado porque `otto-pop-in` também serve popover, dropdown e toast, que são
+   posicionados pelo Radix (transform inline) ou pelo fluxo: forçar o translate neles os
+   jogaria para fora da tela. */
+@keyframes otto-pop-in-center {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes otto-slide-from-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes otto-slide-to-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+[data-otto-overlay][data-state='open'] { animation: otto-fade-in 150ms ease-out; }
+[data-otto-overlay][data-state='closed'] { animation: otto-fade-out 120ms ease-in; }
+[data-otto-pop][data-state='open'] { animation: otto-pop-in 130ms ease-out; }
+[data-otto-pop][data-state='closed'] { animation: otto-fade-out 100ms ease-in; }
+[data-otto-pop-center][data-state='open'] { animation: otto-pop-in-center 130ms ease-out; }
+/* Fechar anima só `opacity`: sem `transform` no keyframe, o da classe continua valendo. */
+[data-otto-pop-center][data-state='closed'] { animation: otto-fade-out 100ms ease-in; }
+[data-otto-drawer][data-state='open'] { animation: otto-slide-from-left 220ms cubic-bezier(0.32, 0.72, 0, 1); }
+[data-otto-drawer][data-state='closed'] { animation: otto-slide-to-left 180ms ease-in; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-otto-overlay],
+  [data-otto-pop],
+  [data-otto-pop-center],
+  [data-otto-drawer] {
+    animation: none !important;
+  }
+}

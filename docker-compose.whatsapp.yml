@@ -1,0 +1,41 @@
+# Include explicitly only when running Evolution locally.
+services:
+  evolution:
+    # Optional external dependency. Review provider version/session compatibility.
+    image: ${EVOLUTION_IMAGE:?defina EVOLUTION_IMAGE no .env}
+    profiles: ["whatsapp"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8084:8080"
+    volumes:
+      - evolution_data:/evolution/instances
+    environment:
+      SERVER_URL: http://localhost:8084
+      # Sem fallback de propósito: `:-changeme` fazia um compose sem .env subir com o
+      # segredo publicado no repositório, e é essa chave que autentica os webhooks.
+      # `:?` derruba o `up` com mensagem clara em vez de subir inseguro em silêncio.
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?defina EVOLUTION_API_KEY no .env}
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+      DEL_INSTANCE: "false"
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://otto:otto@postgres:5432/evolution_otto?schema=public
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/1
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+      CONFIG_SESSION_PHONE_VERSION: "2.3000.1040976739"
+      LOG_LEVEL: ERROR
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+
+volumes:
+  evolution_data:

@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest
+pytest-asyncio
+ruff
+moto[s3]>=5,<6
+PyYAML>=6,<7

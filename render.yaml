@@ -1,0 +1,156 @@
+# Preparation only: applying this Blueprint creates billed resources.
+# Supply external Neon, private S3 and Evolution credentials in the dashboard.
+services:
+  - type: keyvalue
+    name: otto-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+  - type: web
+    name: otto-api
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: pip install --require-hashes -r requirements.lock
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /health/ready
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: ENV
+        value: production
+      - key: MEDIA_STORAGE_BACKEND
+        value: s3
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_ADDRESSING_STYLE
+        value: auto
+      - key: SQL_ECHO
+        value: 'false'
+      - key: TRUSTED_PROXY
+        value: 'true'
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: otto-redis
+          property: connectionString
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_DIRECT_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: EVOLUTION_URL
+        sync: false
+      - key: EVOLUTION_API_KEY
+        sync: false
+      - key: WEBHOOK_BASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+  - type: worker
+    name: otto-worker
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: pip install --require-hashes -r requirements.lock
+    startCommand: celery -A app.worker.celery_app worker --loglevel=warning --concurrency=2
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: ENV
+        value: production
+      - key: MEDIA_STORAGE_BACKEND
+        value: s3
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_ADDRESSING_STYLE
+        value: auto
+      - key: SQL_ECHO
+        value: 'false'
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: otto-redis
+          property: connectionString
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: DATABASE_URL
+      - key: DATABASE_DIRECT_URL
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: DATABASE_DIRECT_URL
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: SECRET_KEY
+      - key: EVOLUTION_URL
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: EVOLUTION_URL
+      - key: EVOLUTION_API_KEY
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: EVOLUTION_API_KEY
+      - key: WEBHOOK_BASE_URL
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: WEBHOOK_BASE_URL
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: CORS_ORIGINS
+      - key: S3_BUCKET
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: S3_BUCKET
+      - key: S3_ENDPOINT_URL
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: S3_ENDPOINT_URL
+      - key: S3_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: S3_ACCESS_KEY_ID
+      - key: S3_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: otto-api
+          envVarKey: S3_SECRET_ACCESS_KEY
+  - type: web
+    name: otto-frontend
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_WS_URL
+        sync: false
