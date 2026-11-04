@@ -41,6 +41,7 @@ export interface Message {
   deleted_by?: string | null
   edited_at?: string | null
   original_content?: string | null
+  sender_user_id?: string | null
 }
 
 export interface Conversation {

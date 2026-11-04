@@ -102,6 +102,24 @@ class AuditedProvider(ChannelProvider):
             message.channel_connection_id,
         )
 
+    async def edit_message(
+        self, message: OutboundMessage, external_id: str
+    ) -> SendResult:
+        return await self._operation(
+            "channel.edit",
+            lambda: self.provider.edit_message(message, external_id),
+            message.channel_connection_id,
+        )
+
+    async def delete_message(
+        self, message: OutboundMessage, external_id: str
+    ) -> SendResult:
+        return await self._operation(
+            "channel.delete",
+            lambda: self.provider.delete_message(message, external_id),
+            message.channel_connection_id,
+        )
+
     async def provision(self, credentials: dict) -> dict:
         return await self._operation(
             "channel.provision", lambda: self.provider.provision(credentials)

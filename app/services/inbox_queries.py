@@ -223,8 +223,10 @@ async def get_conversation_messages(
         text(
             "SELECT id, direction, content_type, content, status, created_at, "
             "is_internal, is_bot, has_media, media_status, removed_at, "
-            "removed_by_name, transcript_status, revisao, apagada_por_nome FROM ("
+            "removed_by_name, transcript_status, revisao, apagada_por_nome, "
+            "sender_user_id FROM ("
             "  SELECT m.id, direction, content_type, content, status, m.created_at, "
+            "  m.sender_user_id, "
             "  COALESCE(channel_metadata->>'internal', 'false') = 'true' AS is_internal, "
             "  COALESCE(channel_metadata->>'bot', 'false') = 'true' AS is_bot, "
             "  channel_metadata->'media'->>'has_media' AS has_media, "
@@ -284,6 +286,7 @@ async def get_conversation_messages(
             "deleted_by": r.apagada_por_nome,
             "edited_at": (r.revisao or {}).get("editada_em"),
             "original_content": (r.revisao or {}).get("original"),
+            "sender_user_id": str(r.sender_user_id) if r.sender_user_id else None,
         }
         for r in rows
     ]

@@ -1,5 +1,6 @@
 'use client'
-import { Ban, Bot, FileText, Film, Image as ImageIcon, Mic, Smile, Sparkles, StickyNote, Trash2 } from 'lucide-react'
+import { Ban, Bot, FileText, Film, Image as ImageIcon, Mic, MoreVertical, Pencil, Smile, Sparkles, StickyNote, Trash2 } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Message } from '@/types/api'
 import { mediaUrl } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -114,7 +115,13 @@ function rotuloApagada(msg: Message): string {
   return msg.direction === 'inbound' ? 'Apagada pelo cliente' : 'Apagada no WhatsApp'
 }
 
-export default function MessageBubble({ msg }: { msg: Message }) {
+/** O que o atendente pode fazer com a própria bolha. Ausente = nada (cliente, bot, colega). */
+export interface AcoesDaBolha {
+  editar?: () => void
+  apagar?: () => void
+}
+
+export default function MessageBubble({ msg, acoes }: { msg: Message; acoes?: AcoesDaBolha }) {
   // Nunca foi ao cliente: largura toda, fora do jogo esquerda/direita. A do bot é a
   // triagem (roxo da IA); a escrita por gente é a nota interna (amarelo).
   if (msg.is_internal) {
@@ -190,6 +197,32 @@ export default function MessageBubble({ msg }: { msg: Message }) {
           tipo === 'cliente' && 'text-faint'
         )}
       >
+        {(acoes?.editar || acoes?.apagar) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                aria-label="Ações da mensagem"
+                className="-my-1 rounded p-0.5 opacity-75 outline-none hover:opacity-100 focus-visible:ring-[3px] focus-visible:ring-accent-ring coarse:p-2"
+              >
+                <MoreVertical size={13} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {acoes.editar && (
+                <DropdownMenuItem onSelect={acoes.editar}>
+                  <Pencil size={15} strokeWidth={1.75} />
+                  Editar
+                </DropdownMenuItem>
+              )}
+              {acoes.apagar && (
+                <DropdownMenuItem destructive onSelect={acoes.apagar}>
+                  <Trash2 size={15} strokeWidth={1.75} />
+                  Apagar para todos
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         {msg.edited_at && <span className={cn('font-sans italic', tipo !== 'cliente' && 'opacity-75')}>editada</span>}
         {/* Opacidade só no horário: "Falhou" precisa do contraste cheio. */}
         <span className={cn(tipo !== 'cliente' && 'opacity-75')}>{formatMsgTime(msg.created_at)}</span>

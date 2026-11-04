@@ -30,6 +30,7 @@ from app.schemas import (
     ConversationDetailSchema,
     ConversationListSchema,
     ConversationSchema,
+    EditMessageSchema,
     MessageSchema,
     SendMessageSchema,
     StatusUpdateSchema,
@@ -43,6 +44,7 @@ from app.services import (
     events,
     inbox_queries,
     media_links,
+    revisao_mensagem,
 )
 from app.services.channels import JOIN_CONEXAO
 from app.services.previews import preview_for
@@ -443,6 +445,7 @@ async def send_message(
         content=body.content,
         status=MessageStatus.SENT if send_result.success else MessageStatus.FAILED,
         created_at=msg.created_at,
+        sender_user_id=current_user.user_id,
     )
 
 
@@ -565,6 +568,7 @@ async def send_media_message(
         content=caption or None,
         status=MessageStatus.SENT if sucesso else MessageStatus.FAILED,
         created_at=msg.created_at,
+        sender_user_id=current_user.user_id,
         # Sem isto a bolha recém-enviada aparece vazia: a thread faz append do objeto
         # retornado e só veria a mídia depois do refresh do WebSocket.
         media_url=(
@@ -572,6 +576,93 @@ async def send_media_message(
             f"?{media_links.assinar('media', message_id, current_user.tenant_id)}"
         ),
     )
+
+
+async def _revisar(
+    session: AsyncSession,
+    current_user: TokenData,
+    conversation_id: UUID,
+    message_id: UUID,
+    acao: str,
+    novo: str | None = None,
+) -> None:
+    """Edita ou apaga para todos uma mensagem do próprio atendente.
+
+    Valida, aplica no canal e só então grava — se o WhatsApp recusar, nada muda aqui.
+    """
+    try:
+        alvo = await revisao_mensagem.alvo_do_atendente(
+            session,
+            current_user.tenant_id,
+            current_user.user_id,
+            conversation_id,
+            message_id,
+            acao,
+        )
+    except revisao_mensagem.RevisaoRecusada as recusa:
+        raise HTTPException(status_code=recusa.status, detail=recusa.motivo)
+
+    rota = await _rota_de_envio(session, current_user.tenant_id, conversation_id)
+    outbound = OutboundMessage(
+        channel=rota.channel.lower(),
+        channel_connection_id=rota.channel_connection_id,
+        to_external_id=rota.contact_external_id,
+        to_phone=rota.contact_phone,
+        content_type=ContentType.TEXT,
+        content=novo or "",
+        channel_metadata={"instance_key": rota.instance_key},
+    )
+    provider = get_provider(Channel(rota.channel.lower()))
+    resultado = await (
+        provider.edit_message(outbound, alvo.external_id)
+        if acao == "editada"
+        else provider.delete_message(outbound, alvo.external_id)
+    )
+    if not resultado.success:
+        log.warning("Revisão recusada pelo canal (%s): %s", acao, resultado.error)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="O WhatsApp não aceitou a alteração. A mensagem continua como estava.",
+        )
+
+    await revisao_mensagem.marcar_pelo_otto(
+        session, current_user.tenant_id, current_user.user_id, message_id, acao, novo
+    )
+    await session.commit()
+    await events.publish_once(
+        current_user.tenant_id,
+        events.MESSAGE_CHANGED,
+        {"conversation_id": str(conversation_id), "message_id": str(message_id)},
+    )
+
+
+@router.patch(
+    "/{conversation_id}/messages/{message_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def editar_mensagem(
+    conversation_id: UUID,
+    message_id: UUID,
+    body: EditMessageSchema,
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    await _revisar(
+        session, current_user, conversation_id, message_id, "editada", body.content
+    )
+
+
+@router.delete(
+    "/{conversation_id}/messages/{message_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def apagar_mensagem(
+    conversation_id: UUID,
+    message_id: UUID,
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    await _revisar(session, current_user, conversation_id, message_id, "apagada")
 
 
 @router.post("/{conversation_id}/suggest-reply")

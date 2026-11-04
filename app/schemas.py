@@ -24,6 +24,8 @@ class MessageSchema(BaseModel):
         False  # nota interna (triagem do bot) — não veio do/foi ao cliente
     )
     is_bot: bool = False  # mensagem enviada pelo agente de IA
+    # Quem da equipe enviou. É o que decide se o atendente pode editar/apagar a bolha.
+    sender_user_id: UUID | None = None
     media_url: str | None = None  # /media/{id} quando há mídia baixada
     transcript_status: str | None = None  # pending | done | failed (áudio)
     # Mídia recebida que um admin apagou: o arquivo saiu, a mensagem fica (banco de mídia).
@@ -88,6 +90,10 @@ class StatusUpdateSchema(BaseModel):
 class SendMessageSchema(BaseModel):
     content: str
     content_type: ContentType = ContentType.TEXT
+
+
+class EditMessageSchema(BaseModel):
+    content: str = Field(min_length=1, max_length=4096)
 
 
 class SuggestReplySchema(BaseModel):

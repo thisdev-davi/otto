@@ -71,6 +71,23 @@ class ChannelProvider(ABC):
         """
         return False
 
+    async def edit_message(
+        self, message: OutboundMessage, external_id: str
+    ) -> SendResult:
+        """Troca o texto de uma mensagem nossa já entregue. `message.content` é o novo.
+
+        Reaproveita `OutboundMessage` porque o endereçamento é o mesmo do envio: quem
+        sabe para onde a mensagem original foi é o provider. Canal sem edição devolve
+        falha, nunca sucesso fingido.
+        """
+        return SendResult(success=False, error="canal não permite editar mensagem")
+
+    async def delete_message(
+        self, message: OutboundMessage, external_id: str
+    ) -> SendResult:
+        """Apaga para todos uma mensagem nossa já entregue."""
+        return SendResult(success=False, error="canal não permite apagar mensagem")
+
     async def fetch_media(
         self, credentials: dict, message_metadata: dict
     ) -> tuple[bytes, str] | None:

@@ -671,6 +671,54 @@ class EvolutionProvider(ChannelProvider):
             )
         return SendResult(success=False, error=resp.text)
 
+    async def edit_message(
+        self, message: OutboundMessage, external_id: str
+    ) -> SendResult:
+        """/chat/updateMessage. A `key` precisa do JID para onde a ORIGINAL foi: o
+        Evolution acha a mensagem pelo id, mas o WhatsApp só aplica a edição ao par
+        (remoteJid, id). Só texto e legenda de foto/vídeo — o próprio Evolution recusa o
+        resto com "Message not compatible"."""
+        return await self._revisar(
+            "POST",
+            "chat/updateMessage",
+            message,
+            lambda jid: {
+                "number": _destino(message),
+                "text": message.content,
+                "key": {"id": external_id, "remoteJid": jid, "fromMe": True},
+            },
+        )
+
+    async def delete_message(
+        self, message: OutboundMessage, external_id: str
+    ) -> SendResult:
+        """/chat/deleteMessageForEveryone (DELETE com corpo, como o Evolution exige)."""
+        return await self._revisar(
+            "DELETE",
+            "chat/deleteMessageForEveryone",
+            message,
+            lambda jid: {"id": external_id, "remoteJid": jid, "fromMe": True},
+        )
+
+    async def _revisar(self, metodo: str, rota: str, message: OutboundMessage, corpo):
+        motivo = _sem_destino(message)
+        if motivo is not None:
+            return SendResult(success=False, error=motivo)
+        destino = _destino(message)
+        jid = destino if "@" in destino else f"{destino}@s.whatsapp.net"
+        instance_key = message.channel_metadata.get("instance_key", "otto-test")
+        async with httpx.AsyncClient() as client:
+            resp = await client.request(
+                metodo,
+                f"{settings.EVOLUTION_URL}/{rota}/{instance_key}",
+                json=corpo(jid),
+                headers={"apikey": settings.EVOLUTION_API_KEY},
+                timeout=15.0,
+            )
+        if resp.status_code in (200, 201):
+            return SendResult(success=True)
+        return SendResult(success=False, error=resp.text[:300])
+
     def _webhook_config(self, webhook_id: str) -> dict:
         """Config do webhook que o Evolution deve usar para nos entregar eventos.
 

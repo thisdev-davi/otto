@@ -8,7 +8,10 @@ import type { ContactProfile, Conversation, Message } from '@/types/api'
 import ThreadHeader from '@/components/ThreadHeader'
 import ContactPanel from '@/components/ContactPanel'
 import ReplyInput from '@/components/ReplyInput'
-import MessageBubble from '@/components/MessageBubble'
+import MessageBubble, { type AcoesDaBolha } from '@/components/MessageBubble'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn, diaLocal, rotuloDia } from '@/lib/utils'
@@ -16,6 +19,11 @@ import { cn, diaLocal, rotuloDia } from '@/lib/utils'
 // Tamanho da página de mensagens. A thread abre sempre nas MAIS RECENTES; o botão
 // "Carregar anteriores" anda para trás somando offset.
 const PAGE = 50
+
+// Janelas do WhatsApp para editar e apagar para todos. Espelham
+// `revisao_mensagem.JANELA_*` só para esconder o botão; quem decide é o servidor.
+const JANELA_EDICAO_MS = 15 * 60 * 1000
+const JANELA_APAGAR_MS = 48 * 60 * 60 * 1000
 
 /** Faixa de data entre os blocos de mensagens do dia. */
 function SeparadorDia({ iso }: { iso: string }) {
@@ -55,6 +63,40 @@ export default function ConversationThread({ conversationId, conversation, onCon
   // Altura anterior do conteúdo, gravada só quando carregamos histórico: é o que
   // permite devolver o usuário à mesma linha depois do prepend.
   const prependFrom = useRef<number | null>(null)
+  const [editando, setEditando] = useState<Message | null>(null)
+  const [textoEditado, setTextoEditado] = useState('')
+  const [apagando, setApagando] = useState<Message | null>(null)
+  const [revisando, setRevisando] = useState(false)
+
+  // Só a PRÓPRIA mensagem, que chegou ao WhatsApp e não foi apagada. `Date.now()` no
+  // render basta: o menu reavalia a cada refresh da thread, e o servidor recusa o resto.
+  function acoesDe(msg: Message): AcoesDaBolha | undefined {
+    if (!userId || msg.sender_user_id !== userId || msg.deleted_at || msg.status === 'failed') return undefined
+    const idade = Date.now() - new Date(msg.created_at).getTime()
+    const acoes: AcoesDaBolha = {}
+    if (msg.content_type === 'text' && idade < JANELA_EDICAO_MS) {
+      acoes.editar = () => {
+        setTextoEditado(msg.content ?? '')
+        setEditando(msg)
+      }
+    }
+    if (idade < JANELA_APAGAR_MS) acoes.apagar = () => setApagando(msg)
+    return acoes.editar || acoes.apagar ? acoes : undefined
+  }
+
+  async function revisar(acao: () => Promise<void>, fechar: () => void, erro: string) {
+    if (revisando) return
+    setRevisando(true)
+    try {
+      await acao()
+      fechar()
+      fetchMessages()
+    } catch (e) {
+      toast.error((e as Error).message || erro)
+    } finally {
+      setRevisando(false)
+    }
+  }
 
   const fetchMessages = () => {
     if (!conversationId || !token) {
@@ -216,7 +258,7 @@ export default function ConversationThread({ conversationId, conversation, onCon
               return (
                 <Fragment key={msg.id}>
                   {virouODia && <SeparadorDia iso={msg.created_at} />}
-                  <MessageBubble msg={msg} />
+                  <MessageBubble msg={msg} acoes={acoesDe(msg)} />
                 </Fragment>
               )
             })}
@@ -230,6 +272,61 @@ export default function ConversationThread({ conversationId, conversation, onCon
           />
         )}
       </div>
+      <Dialog open={editando !== null} onOpenChange={(o) => !o && setEditando(null)}>
+        <DialogContent className="max-w-[480px]">
+          <DialogTitle>Editar mensagem</DialogTitle>
+          <DialogDescription>
+            O texto muda também no WhatsApp do cliente, marcado como editado. A versão anterior fica guardada aqui.
+          </DialogDescription>
+          <Textarea
+            className="mt-4"
+            rows={4}
+            maxLength={4096}
+            value={textoEditado}
+            onChange={(e) => setTextoEditado(e.target.value)}
+            aria-label="Novo texto"
+          />
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setEditando(null)} disabled={revisando}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={revisando || !textoEditado.trim() || textoEditado === editando?.content}
+              onClick={() =>
+                editando &&
+                token &&
+                conversationId &&
+                revisar(
+                  () => api.conversations.editMessage(token, conversationId, editando.id, textoEditado.trim()),
+                  () => setEditando(null),
+                  'Não foi possível editar a mensagem.',
+                )
+              }
+            >
+              {revisando ? 'Salvando…' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog
+        open={apagando !== null}
+        onOpenChange={(o) => !o && setApagando(null)}
+        title="Apagar para todos?"
+        description="A mensagem some do WhatsApp do cliente. Aqui ela continua visível para a equipe, marcada como apagada por você."
+        confirmLabel="Apagar"
+        destructive
+        loading={revisando}
+        onConfirm={() =>
+          apagando &&
+          token &&
+          conversationId &&
+          revisar(
+            () => api.conversations.deleteMessage(token, conversationId, apagando.id),
+            () => setApagando(null),
+            'Não foi possível apagar a mensagem.',
+          )
+        }
+      />
       {perfilAberto && conversation && (
         <ContactPanel
           contactId={conversation.contact_id}

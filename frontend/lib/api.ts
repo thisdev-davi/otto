@@ -184,6 +184,16 @@ export const api = {
         token,
         body: JSON.stringify({ content, content_type: 'text' }),
       }),
+    /** Edita no WhatsApp do cliente uma mensagem de texto do próprio atendente (até 15 min). */
+    editMessage: (token: string, id: string, messageId: string, content: string) =>
+      apiFetch<void>(`/conversations/${id}/messages/${messageId}`, {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify({ content }),
+      }),
+    /** Apaga para todos uma mensagem do próprio atendente (até 48 h). */
+    deleteMessage: (token: string, id: string, messageId: string) =>
+      apiFetch<void>(`/conversations/${id}/messages/${messageId}`, { method: 'DELETE', token }),
     /** Anexo do atendente. O tipo (imagem/áudio/documento) é decidido no servidor. */
     /** `ptt` marca nota de voz: vira balão de áudio no WhatsApp, não anexo. Só vale
      *  para áudio — o servidor ignora em imagem e documento. */
