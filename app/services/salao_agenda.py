@@ -62,6 +62,8 @@ _SELECT_RESERVA = (
 # Dirige do gerador e não de `salao_datas` porque o calendário precisa de uma linha por
 # DIA do intervalo, cadastrado ou não: é o que permite ao front desenhar o mês sem
 # sintetizar os buracos, e sintetizar buraco é onde a segunda implementação da regra nasce.
+# `.format(fonte=...)` só recebe as duas constantes `_FONTE_*` abaixo, nunca entrada:
+# os valores do usuário vão sempre como parâmetro do `text()`.
 _SQL_RESOLUCAO = """
 SELECT dia::date AS data,
        d.preco_centavos,

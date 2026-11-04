@@ -16,6 +16,7 @@ from uuid import UUID
 
 import bcrypt
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import UserRole
@@ -211,7 +212,7 @@ async def accept_invite(
                 "r": inv.role,
             },
         )
-    except Exception:
+    except IntegrityError:
         # uq_users_tenant_email: alguém já criou esse e-mail entre o convite e o aceite.
         # Rollback devolve o convite ao estado pendente — o admin resolve por fora.
         await db.rollback()

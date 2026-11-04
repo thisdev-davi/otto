@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from uuid import UUID
 
@@ -15,6 +16,8 @@ from app.schemas import (
     CreateWhatsAppConnectionSchema,
 )
 from app.services import channels as channels_service
+
+log = logging.getLogger("uvicorn.error")
 
 # Admin-only no router inteiro: parear ou remover a instância derruba o WhatsApp do
 # negócio todo. O Sidebar não consome estes endpoints (usa CHANNEL_META estático), então
@@ -107,7 +110,11 @@ async def delete_channel(
     try:
         await provider.deprovision(credentials)
     except Exception:
-        pass  # remoção no provider é best-effort; a conexão local sai de qualquer forma
+        # Best-effort: a conexão local sai de qualquer forma, mas a instância que sobrou
+        # no provider precisa aparecer no log para ser removida à mão.
+        log.warning(
+            "deprovision falhou para a conexão %s", connection_id, exc_info=True
+        )
     await channels_service.delete_connection(
         session, current_user.tenant_id, connection_id
     )
