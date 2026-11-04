@@ -21,9 +21,9 @@ quatro acima.
 **Cada sistema nichado é um fork deste repositório**, com seu deploy, sua marca e sua persona. Não é
 um tenant a mais no mesmo servidor.
 
-**Deploy está fora de escopo aqui, permanentemente.** Este repositório sobe em máquina de
-desenvolvimento (`./dev.sh`) e nada mais. Hospedagem, CI e imagem de container são decisão do
-derivado, porque dependem de onde ele vai rodar — e essa decisão não é da base.
+**Implantar é decisão do derivado.** O repositório traz CI e um `render.yaml` de referência
+(`docs/DEPLOY.md`), mas onde e como hospedar depende de onde cada derivado vai rodar — essa
+decisão não é da base.
 
 Uma consequência que economiza tempo: **o multi-tenant continua existindo dentro do seu fork.** Um
 derivado atende N clientes do mesmo nicho como N tenants. O fork separa *nichos*, não *clientes*.

@@ -101,9 +101,10 @@ conteúdo que o alimenta tem guia próprio: `docs/guias/GUIA-CONTEUDO-AGENTE.md`
 - **Instagram DM e e-mail** — removidos do código em 2026-07-24. O foco é 100% WhatsApp. A interface
   `ChannelProvider` permanece como ponto de extensão; re-adicionar canal = re-registrar na factory.
 - **Cloud API Oficial da Meta** — ver §2.2. Ficamos na Evolution.
-- **Deploy, CI e imagem de container** — decisão de 2026-07-28. O Otto é a **base**: quem vai a
-  produção é o derivado, e a forma certa de hospedar depende de onde ele vai rodar. Este repositório
-  sobe em máquina de desenvolvimento (`./dev.sh`) e nada mais. Ver `docs/produto/PLATAFORMA.md` §0.
+- **Deploy executado.** Existe CI (`.github/workflows/ci.yml`: lint, testes com cobertura,
+  checagens do front e gitleaks) e um `render.yaml` preparado com o roteiro em `docs/DEPLOY.md`,
+  mas nenhuma implantação remota foi feita: a forma certa de hospedar é decisão de quem vai a
+  produção (`docs/produto/PLATAFORMA.md` §0).
 - **Editor visual de fluxo** (arrastar, conectar e criar caixas). Editar o **texto** das
   caixas entregou junto com o motor; o que continua fora é mexer no *desenho* pelo painel.
   Quais caixas existem e como se ligam vem de `conteudo/fluxo.json`, versionado no git e
@@ -122,9 +123,9 @@ conteúdo que o alimenta tem guia próprio: `docs/guias/GUIA-CONTEUDO-AGENTE.md`
 Revisadas em 2026-07-27 com nota de 0 a 5 e corte em 4 — o que passou do corte está em §3.1.
 As notas ficam registradas porque a razão da recusa envelhece melhor que a recusa.
 
-1. **Cobertura de teste de `tasks/media.py` e do endpoint de webhook** (3) — 188 linhas que tocam
-   disco e rede externa, sem teste; o `POST /webhooks/{channel}` só tem os métodos do provider
-   testados, não a rota. É o caminho por onde entra tudo.
+1. **Cobertura de teste de `tasks/media.py`** (3) — o caminho que toca disco e rede externa. A
+   rota de webhook já tem teste próprio (`tests/test_webhook_auth.py`), inclusive de isolamento
+   entre conexões.
 2. **Compreensão de imagem** (3) — imagem é baixada, exibida e nunca interpretada. Os dois cérebros
    avisam que não leem e, na segunda, chamam gente (`services/midia.py`). É expansão de capacidade,
    não buraco: quem lê a imagem hoje é o humano que assume, e agora ele é sempre chamado.
@@ -282,7 +283,7 @@ A mesma lógica protege **liberação** (`AND assigned_user_id = :user_id` — s
 
 ## 7. Segurança e conformidade
 
-- **Verificação de webhook — risco aceito.** A Evolution não assina o payload: `verify_webhook` só compara o header `apikey` com `EVOLUTION_API_KEY` (`channels/whatsapp.py`). Não há HMAC como na Cloud API, então quem descobrir a URL e a chave injeta mensagem falsa na inbox. Com a decisão de §2.2 isso deixa de ser transitório e vira risco permanente: a chave precisa ser longa e rotacionável, o endpoint não deve ficar exposto além do necessário, e a comparação deveria usar `hmac.compare_digest` em vez de `==`.
+- **Verificação de webhook — duas barreiras.** A Evolution não assina o payload, então a `apikey` compartilhada (comparada com `hmac.compare_digest`) prova só a origem. O tenant sai do `webhook_id` secreto **por conexão** no caminho da URL (`services/channels.py::resolve_by_webhook_id`); o `instance` do corpo é apenas conferido. Detalhes e histórico em `SEGURANCA.md`.
 - **Credenciais de canal.** Guardadas em `ChannelConnection.credentials` (JSONB). Nunca logar; criptografar em repouso em produção.
 - **Isolamento multi-tenant.** `tenant_id` em todas as queries de captura como defesa em profundidade — impede acessar conversa de outro tenant mesmo que um id vaze.
 - **LGPD.** Atendimento lida com dados pessoais de clientes; tratar retenção, exportação e exclusão como requisito desde a modelagem.
@@ -302,7 +303,8 @@ A mesma lógica protege **liberação** (`AND assigned_user_id = :user_id` — s
 | Nível 1 | Atendimento por fluxo (sem IA), horário de atendimento, killswitch de 3 estados | ✓ entregue |
 | Nível 1 | Edição do texto das caixas pelo painel + simulador do roteiro | ✓ entregue |
 | Produção | Entrega verificada por ACK, ordem das bolhas, mídia nos dois cérebros, conta nova em fluxo | ✓ entregue |
-| **Agora** | **Testes de `tasks/media.py` e da rota de webhook, visão de imagem** | em aberto (§3.3) |
+| Qualidade | Avaliação offline do agente (`evals/`), cobertura na CI, ESLint e teste no front | ✓ entregue |
+| **Agora** | **Testes de `tasks/media.py`, visão de imagem, avaliação pós-atendimento** | em aberto (§3.3) |
 | Depois | Distribuição automática, merge de contatos, campanhas | Crescimento |
 
 **Nota de implementação:** toda dependência da Evolution segue isolada atrás do adapter de canais.
@@ -320,8 +322,8 @@ endereço entregável — envio para ele volta `ERROR` do próprio Evolution —
 Contato antigo criado sem `senderPn` não tem telefone e o envio **falha de propósito**, virando
 fila da equipe com nota, em vez de fingir entrega.
 
-**Não é mais risco:** a ausência de caminho de deploy. Passou a ser decisão de escopo (§3.2): quem
-vai a produção é o derivado.
+**Não é mais risco:** a ausência de caminho de deploy. Há `render.yaml` e roteiro em
+`docs/DEPLOY.md`; executá-lo é decisão de quem vai a produção (§3.2).
 
 ---
 
@@ -329,26 +331,26 @@ vai a produção é o derivado.
 
 ```
 app/
-├── models/       core.py (Tenant, ChannelConnection, Contact, Conversation, Message,
-│                 ConversationEvent, BotSettings, QuickReply…) · enums.py
-├── channels/     types.py (NormalizedInbound, OutboundMessage, OutboundMedia, SendResult)
-│                 base.py (ChannelProvider, interface abstrata)
-│                 whatsapp.py (EvolutionProvider ativo + CloudAPIProvider esqueleto)
-│                 factory.py (get_provider — único ponto de troca de provider)
-├── ai/           llm.py · embeddings.py · retrieval.py · chunking.py · transcription.py
-├── api/          auth · inbox · webhooks · ws · channels · bot · media · reports ·
-│                 team · quick_replies
-├── services/     assignment (captura atômica) · ingestion · inbox_queries · previews
-│                 bot_orchestrator · bot_settings · ai_context · copilot · kb
-│                 contact_memory · attachments · channels · team · quick_replies
-│                 reports · events
-├── tasks/        ingest · bot · media · runner
-└── core/         config · database
+├── models/    core (Tenant, ChannelConnection, Contact, Conversation, Message, …) · enums
+│              salao · contatos · fluxo · audit
+├── channels/  types · base (ChannelProvider) · whatsapp (EvolutionProvider) · factory
+│              audited (auditoria de efeito externo)
+├── flow/      schema (validador) · engine (decidir) · registro · texto · horario
+├── ai/        llm · embeddings · retrieval · chunking · transcription
+├── api/       auth · inbox · webhooks · ws · channels · bot · fluxo · media · reports ·
+│              team · quick_replies · contatos · salao · audit
+├── services/  assignment (captura atômica) · ingestion · conversation_state · inbox_queries
+│              bot_orchestrator · bot_settings · ai_context · copilot · kb · contact_memory
+│              flow_store · midia · attachments · media_links · storage · avatars · audit
+│              salao_agenda · salao_acoes · salao_contexto · salao_fluxo · salao_fotos
+│              salao_resumo · salao_aviso · contatos · reports · team · …
+├── tasks/     ingest · bot · media · runner
+└── core/      config · database · ratelimit
+evals/         avaliação offline do agente (casos, checagens, relatório)
 ```
 
-> Esta árvore é resumo, não inventário: 16 services, 10 módulos de API, 5 de `ai/`. Para a lista
-> exata, o diretório é a fonte. A **fronteira** entre o que é núcleo estável e o que foi desenhado
-> para ser trocado está em `docs/produto/PLATAFORMA.md` §1.
+> Esta árvore é resumo, não inventário: o diretório é a fonte. A **fronteira** entre o que é
+> núcleo estável e o que foi desenhado para ser trocado está em `docs/produto/PLATAFORMA.md` §1.
 
 ---
 

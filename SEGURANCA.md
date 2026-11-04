@@ -293,6 +293,30 @@ sentidos, conferida **antes** do `b64decode` para não materializar o excesso em
 
 ---
 
+## Revisão de 04/11/2026
+
+Revisão antes de tornar o repositório público. Nenhum achado crítico ou alto. Corrigido:
+
+- **Rota legada de webhook removida.** `POST /webhooks/{channel}` era o último lugar onde o
+  corpo decidia o tenant; `ingestion.ingest` agora exige `connection_id` (regra 5).
+- **`X-Forwarded-For` lido pela direita.** O primeiro item é o que o cliente escreve; com
+  `TRUSTED_PROXY=true`, o IP usado no rate limit é o N-ésimo da direita
+  (`TRUSTED_PROXY_HOPS`), que é o que o proxy acrescentou.
+- **SSRF no download de avatar.** A URL vem do Evolution: só HTTPS para IP público, sem
+  seguir redirect (`channels/whatsapp.py::_url_publica`).
+
+### Riscos aceitos
+
+- **Tokens no `localStorage`.** Um XSS na origem do painel leva a sessão. Mitigação atual:
+  CSP e headers em `frontend/next.config.ts`, mídia servida com `Content-Type` da allow-list
+  (C2), refresh revogável por `token_version` (H3). Caminho de upgrade: refresh em cookie
+  `httpOnly` + `SameSite=Strict` e access só em memória.
+- **JWT na query do WebSocket** (`/ws?token=`). Pode aparecer em log de proxy. O canal só
+  entrega eventos do próprio tenant e o access token é de curta duração. Caminho de upgrade:
+  ticket de uso único emitido por `POST` autenticado, no mesmo molde de `media_links`.
+- **Rate limit falha aberto** quando o Redis cai (`core/ratelimit.py`). Decisão deliberada: sem
+  Redis o broker do Celery também para, e negar login a todos é pior que uma janela sem limite.
+
 ## Passos de deploy
 
 Ordem importa. Os dois primeiros itens são obrigatórios.
