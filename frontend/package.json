@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
-    "check": "tsc --noEmit && npm run lint && npm run check:tokens && npm run check:contrast"
+    "check": "tsc --noEmit && npm run lint && npm test && npm run check:tokens && npm run check:contrast",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/*.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
