@@ -37,6 +37,10 @@ export interface Message {
   transcript_status?: string | null
   media_removed_at?: string | null
   media_removed_by?: string | null
+  deleted_at?: string | null
+  deleted_by?: string | null
+  edited_at?: string | null
+  original_content?: string | null
 }
 
 export interface Conversation {

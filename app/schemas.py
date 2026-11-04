@@ -29,6 +29,12 @@ class MessageSchema(BaseModel):
     # Mídia recebida que um admin apagou: o arquivo saiu, a mensagem fica (banco de mídia).
     media_removed_at: datetime | None = None
     media_removed_by: str | None = None
+    # Apagada ou editada depois de entregue (`services/revisao_mensagem.py`). A linha
+    # nunca some: `deleted_by` é o nome de quem apagou pelo Otto, ou None se veio do canal.
+    deleted_at: datetime | None = None
+    deleted_by: str | None = None
+    edited_at: datetime | None = None
+    original_content: str | None = None
 
 
 class ConversationSchema(BaseModel):

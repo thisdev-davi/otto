@@ -2,11 +2,11 @@ import redis.asyncio as aioredis
 from sqlalchemy import text
 
 from app.channels.factory import get_provider
-from app.channels.types import NormalizedStatusUpdate
+from app.channels.types import NormalizedMessageChange, NormalizedStatusUpdate
 from app.core.config import settings
 from app.core.database import WorkerSessionLocal
 from app.models.enums import Channel
-from app.services import events
+from app.services import events, revisao_mensagem
 from app.services.bot_orchestrator import handle_inbound
 from app.services.ingestion import ingest
 from app.tasks.runner import run_task
@@ -37,6 +37,8 @@ async def _handle_events(events_parsed: list, connection_id: str) -> None:
     for normalized in events_parsed:
         if isinstance(normalized, NormalizedStatusUpdate):
             await _apply_status(normalized, connection_id)
+        elif isinstance(normalized, NormalizedMessageChange):
+            await _apply_change(normalized, connection_id)
         else:
             await _ingest_one(normalized, connection_id)
 
@@ -79,6 +81,39 @@ async def _ingest_one(normalized, connection_id: str) -> None:
                 normalized.content_type.name,
                 message_ts=normalized.timestamp,
             )
+    finally:
+        await redis_client.aclose()
+
+
+async def _apply_change(change: NormalizedMessageChange, connection_id: str) -> None:
+    """Apagou ou editou no WhatsApp: marca a mensagem e avisa a thread aberta.
+
+    Não dispara turno do bot: a resposta ao texto antigo já saiu, e reagir a uma edição
+    faria o bot responder duas vezes à mesma pergunta.
+    """
+    redis_client = aioredis.from_url(settings.REDIS_URL)
+    try:
+        async with WorkerSessionLocal() as db:
+            alvo = await revisao_mensagem.aplicar_do_canal(
+                db,
+                connection_id,
+                change.channel.name,
+                change.external_id,
+                change.acao,
+                change.content,
+            )
+            if alvo is None:
+                return  # mensagem que nunca passou pelo Otto (anterior à conexão)
+            await db.commit()
+        await events.publish(
+            redis_client,
+            alvo["tenant_id"],
+            events.MESSAGE_CHANGED,
+            {
+                "conversation_id": str(alvo["conversation_id"]),
+                "message_id": str(alvo["id"]),
+            },
+        )
     finally:
         await redis_client.aclose()
 

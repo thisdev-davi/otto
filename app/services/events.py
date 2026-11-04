@@ -14,6 +14,8 @@ log = logging.getLogger("uvicorn.error")
 MESSAGE_INBOUND = "message.inbound"
 MESSAGE_OUTBOUND = "message.outbound"
 MESSAGE_STATUS = "message.status"
+# Mensagem apagada ou editada (pelo cliente ou pelo atendente): a thread recarrega.
+MESSAGE_CHANGED = "message.changed"
 CONVERSATION_ASSIGNED = "conversation.assigned"
 CONVERSATION_STATUS = "conversation.status"
 # O bot desistiu e a conversa virou tarefa de gente. É o ÚNICO evento que pede ação

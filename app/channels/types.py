@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 from pydantic import BaseModel
 from app.models.enums import Channel, ContentType, MessageStatus
@@ -10,6 +11,19 @@ class NormalizedStatusUpdate(BaseModel):
     channel: Channel
     external_id: str
     status: MessageStatus
+
+
+class NormalizedMessageChange(BaseModel):
+    """Quem mandou uma mensagem já entregue voltou atrás: apagou para todos ou editou.
+
+    `content` é o texto novo (só em `editada`). O núcleo nunca apaga a linha: marca a
+    revisão e guarda o original, para a equipe saber o que chegou a ser dito.
+    """
+
+    channel: Channel
+    external_id: str
+    acao: Literal["apagada", "editada"]
+    content: str | None = None
 
 
 class NormalizedInbound(BaseModel):

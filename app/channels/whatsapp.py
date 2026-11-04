@@ -12,6 +12,7 @@ from app.channels.base import ChannelProvider
 from app.channels.types import (
     ChannelStatus,
     NormalizedInbound,
+    NormalizedMessageChange,
     NormalizedStatusUpdate,
     OutboundMessage,
     SendResult,
@@ -237,6 +238,8 @@ class EvolutionProvider(ChannelProvider):
         event = payload.get("event")
         if event == "messages.update":
             return self._parse_status(payload)
+        if event in ("messages.delete", "messages.edited"):
+            return self._parse_revisao(event, payload.get("data") or {})
         if event != "messages.upsert":
             return []
 
@@ -316,6 +319,43 @@ class EvolutionProvider(ChannelProvider):
         return [
             NormalizedStatusUpdate(
                 channel=Channel.WHATSAPP, external_id=external_id, status=status
+            )
+        ]
+
+    @staticmethod
+    def _parse_revisao(event: str, data: dict) -> list[NormalizedMessageChange]:
+        """Apagar para todos e editar, vindos do aparelho do cliente (ou do nosso).
+
+        Os dois formatos foram conferidos no Evolution 2.2.3, não presumidos:
+        `messages.delete` manda a `key` crua (`{remoteJid, fromMe, id}`) como `data`;
+        `messages.edited` manda o `protocolMessage` (`{key, editedMessage, ...}`), com o
+        texto novo dentro de `editedMessage`.
+        """
+        if event == "messages.delete":
+            external_id = data.get("id") or (data.get("key") or {}).get("id")
+            if not external_id:
+                return []
+            return [
+                NormalizedMessageChange(
+                    channel=Channel.WHATSAPP, external_id=external_id, acao="apagada"
+                )
+            ]
+        external_id = (data.get("key") or {}).get("id")
+        editada = data.get("editedMessage") or {}
+        texto = (
+            editada.get("conversation")
+            or (editada.get("extendedTextMessage") or {}).get("text")
+            or (editada.get("imageMessage") or {}).get("caption")
+            or (editada.get("videoMessage") or {}).get("caption")
+        )
+        if not external_id or not texto:
+            return []
+        return [
+            NormalizedMessageChange(
+                channel=Channel.WHATSAPP,
+                external_id=external_id,
+                acao="editada",
+                content=texto,
             )
         ]
 
@@ -652,7 +692,14 @@ class EvolutionProvider(ChannelProvider):
             "headers": {"apikey": settings.EVOLUTION_API_KEY},
             "byEvents": False,
             "base64": False,
-            "events": ["MESSAGES_UPSERT", "MESSAGES_UPDATE"],
+            # DELETE e EDITED: o cliente apagou ou editou. Conexão criada antes disto só
+            # passa a recebê-los ao reconectar (`provision` reafirma o webhook).
+            "events": [
+                "MESSAGES_UPSERT",
+                "MESSAGES_UPDATE",
+                "MESSAGES_DELETE",
+                "MESSAGES_EDITED",
+            ],
         }
 
     async def provision(self, credentials: dict) -> dict:

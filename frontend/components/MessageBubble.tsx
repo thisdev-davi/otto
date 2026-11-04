@@ -1,5 +1,5 @@
 'use client'
-import { Bot, FileText, Film, Image as ImageIcon, Mic, Smile, Sparkles, StickyNote, Trash2 } from 'lucide-react'
+import { Ban, Bot, FileText, Film, Image as ImageIcon, Mic, Smile, Sparkles, StickyNote, Trash2 } from 'lucide-react'
 import type { Message } from '@/types/api'
 import { mediaUrl } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -108,6 +108,12 @@ function MediaContent({ msg }: { msg: Message }) {
   )
 }
 
+function rotuloApagada(msg: Message): string {
+  if (msg.deleted_by) return `Apagada por ${msg.deleted_by}`
+  // Sem pessoa: o aviso veio do próprio WhatsApp.
+  return msg.direction === 'inbound' ? 'Apagada pelo cliente' : 'Apagada no WhatsApp'
+}
+
 export default function MessageBubble({ msg }: { msg: Message }) {
   // Nunca foi ao cliente: largura toda, fora do jogo esquerda/direita. A do bot é a
   // triagem (roxo da IA); a escrita por gente é a nota interna (amarelo).
@@ -162,13 +168,29 @@ export default function MessageBubble({ msg }: { msg: Message }) {
           Agente
         </span>
       )}
-      {isMedia ? <MediaContent msg={msg} /> : (msg.content ?? '')}
+      {msg.deleted_at && (
+        <span className="flex items-center gap-1 mb-0.5 text-2xs font-semibold">
+          <Ban size={12} className="flex-shrink-0" />
+          {rotuloApagada(msg)}
+        </span>
+      )}
+      {/* Apagada continua legível para a equipe: o que o cliente chegou a dizer importa. */}
+      <div className={cn(msg.deleted_at && 'opacity-70')}>
+        {isMedia ? <MediaContent msg={msg} /> : (msg.content ?? '')}
+      </div>
+      {msg.edited_at && msg.original_content && (
+        <details className="mt-1 text-xs">
+          <summary className="cursor-pointer opacity-75">Ver original</summary>
+          <span className="opacity-75">{msg.original_content}</span>
+        </details>
+      )}
       <div
         className={cn(
           'flex items-center justify-end gap-1 mt-0.5 font-mono text-2xs tabular-nums',
           tipo === 'cliente' && 'text-faint'
         )}
       >
+        {msg.edited_at && <span className={cn('font-sans italic', tipo !== 'cliente' && 'opacity-75')}>editada</span>}
         {/* Opacidade só no horário: "Falhou" precisa do contraste cheio. */}
         <span className={cn(tipo !== 'cliente' && 'opacity-75')}>{formatMsgTime(msg.created_at)}</span>
         {isOutbound && (

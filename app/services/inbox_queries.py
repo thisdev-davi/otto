@@ -223,7 +223,7 @@ async def get_conversation_messages(
         text(
             "SELECT id, direction, content_type, content, status, created_at, "
             "is_internal, is_bot, has_media, media_status, removed_at, "
-            "removed_by_name, transcript_status FROM ("
+            "removed_by_name, transcript_status, revisao, apagada_por_nome FROM ("
             "  SELECT m.id, direction, content_type, content, status, m.created_at, "
             "  COALESCE(channel_metadata->>'internal', 'false') = 'true' AS is_internal, "
             "  COALESCE(channel_metadata->>'bot', 'false') = 'true' AS is_bot, "
@@ -231,11 +231,16 @@ async def get_conversation_messages(
             "  channel_metadata->'media'->>'transcript_status' AS transcript_status, "
             "  channel_metadata->'media'->>'status' AS media_status, "
             "  channel_metadata->'media'->>'removed_at' AS removed_at, "
-            "  u.full_name AS removed_by_name "
+            "  u.full_name AS removed_by_name, "
+            "  m.channel_metadata->'revisao' AS revisao, "
+            "  ua.full_name AS apagada_por_nome "
             "  FROM messages m "
             # Quem apagou a mídia: o id mora no JSONB, o nome vem do usuário (mesmo tenant).
             "  LEFT JOIN users u ON u.tenant_id = m.tenant_id "
             "   AND u.id::text = m.channel_metadata->'media'->>'removed_by' "
+            # Quem apagou ou editou pelo Otto (revisão vinda do canal não tem pessoa).
+            "  LEFT JOIN users ua ON ua.tenant_id = m.tenant_id "
+            "   AND ua.id::text = m.channel_metadata->'revisao'->>'apagada_por' "
             "  WHERE conversation_id = :conversation_id AND m.tenant_id = :tenant_id "
             # `id` como desempate: sem ele, mensagens de mesmo instante saíam em
             # ordem arbitrária E instável — a mesma conversa recarregada duas vezes
@@ -275,6 +280,10 @@ async def get_conversation_messages(
             "transcript_status": r.transcript_status,
             "media_removed_at": r.removed_at if r.media_status == "removed" else None,
             "media_removed_by": r.removed_by_name,
+            "deleted_at": (r.revisao or {}).get("apagada_em"),
+            "deleted_by": r.apagada_por_nome,
+            "edited_at": (r.revisao or {}).get("editada_em"),
+            "original_content": (r.revisao or {}).get("original"),
         }
         for r in rows
     ]
