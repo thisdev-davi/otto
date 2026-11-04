@@ -184,6 +184,28 @@ async def read(locator: str) -> bytes:
     return await asyncio.to_thread(Path(locator).read_bytes)
 
 
+def _delete_local(locator: str) -> None:
+    raiz = Path(settings.MEDIA_DIR).resolve()
+    alvo = Path(locator).resolve()
+    # O locator vem do banco; mesmo assim, apagar fora de MEDIA_DIR nunca é permitido.
+    if not alvo.is_relative_to(raiz):
+        raise ValueError("Media path outside MEDIA_DIR")
+    alvo.unlink(missing_ok=True)
+
+
+def _delete_remote(locator: str) -> None:
+    bucket, key = _s3_location(locator)
+    _client().delete_object(Bucket=bucket, Key=key)
+
+
+async def delete(locator: str) -> None:
+    """Apaga o arquivo. Ausente não é erro: apagar duas vezes chega ao mesmo estado."""
+    if is_remote(locator):
+        await asyncio.to_thread(_delete_remote, locator)
+    else:
+        await asyncio.to_thread(_delete_local, locator)
+
+
 async def exists(locator: str) -> bool:
     if not is_remote(locator):
         return await asyncio.to_thread(Path(locator).is_file)

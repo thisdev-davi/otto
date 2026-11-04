@@ -26,6 +26,9 @@ class MessageSchema(BaseModel):
     is_bot: bool = False  # mensagem enviada pelo agente de IA
     media_url: str | None = None  # /media/{id} quando há mídia baixada
     transcript_status: str | None = None  # pending | done | failed (áudio)
+    # Mídia recebida que um admin apagou: o arquivo saiu, a mensagem fica (banco de mídia).
+    media_removed_at: datetime | None = None
+    media_removed_by: str | None = None
 
 
 class ConversationSchema(BaseModel):

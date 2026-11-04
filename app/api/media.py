@@ -10,11 +10,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.auth import decode_token
+from app.api.auth import TokenData, decode_token, require_admin
 from app.core.database import get_session
 from app.services import media_links
 from app.services.attachments import mimetype_para_servir
-from app.services import audit, media_response
+from app.services import audit, media_response, midia_recebida
 
 router = APIRouter(prefix="/media", tags=["media"])
 
@@ -96,6 +96,24 @@ async def get_media(
     )
     await session.commit()
     return await media_response.serve(r.path, media_type, headers, request)
+
+
+@router.delete("/{message_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def excluir_midia(
+    message_id: UUID,
+    current_user: Annotated[TokenData, Depends(require_admin)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    """Apaga o ARQUIVO de uma mídia recebida; a mensagem fica, marcada como removida.
+
+    Só administrador: o arquivo não volta — o WhatsApp deixa de servir a mídia
+    original depois de alguns dias. 404 cobre "não existe", "outro tenant", "já
+    removida" e "enviada por nós": nenhum desses casos tem o que apagar.
+    """
+    if not await midia_recebida.remover(
+        session, current_user.tenant_id, message_id, current_user.user_id
+    ):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
 def _autorizado(

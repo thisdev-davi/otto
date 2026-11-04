@@ -1,5 +1,5 @@
 'use client'
-import { Bot, FileText, Film, Image as ImageIcon, Mic, Smile, Sparkles, StickyNote } from 'lucide-react'
+import { Bot, FileText, Film, Image as ImageIcon, Mic, Smile, Sparkles, StickyNote, Trash2 } from 'lucide-react'
 import type { Message } from '@/types/api'
 import { mediaUrl } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -43,6 +43,18 @@ function RotuloMidia({ icone: Icone, children }: { icone: typeof Mic; children: 
 }
 
 function MediaContent({ msg }: { msg: Message }) {
+  // Apagada no banco de mídia: a mensagem fica no fio da conversa, o arquivo não.
+  if (msg.media_removed_at) {
+    const quando = new Date(msg.media_removed_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    return (
+      <span className="italic opacity-70">
+        <RotuloMidia icone={Trash2}>
+          Mídia removida em {quando}
+          {msg.media_removed_by ? ` por ${msg.media_removed_by}` : ''}
+        </RotuloMidia>
+      </span>
+    )
+  }
   const src = msg.media_url ? mediaUrl(msg.media_url) : null
   if (msg.content_type === 'audio') {
     return (

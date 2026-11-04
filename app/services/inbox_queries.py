@@ -222,20 +222,27 @@ async def get_conversation_messages(
     result = await db.execute(
         text(
             "SELECT id, direction, content_type, content, status, created_at, "
-            "is_internal, is_bot, has_media, transcript_status FROM ("
-            "  SELECT id, direction, content_type, content, status, created_at, "
+            "is_internal, is_bot, has_media, media_status, removed_at, "
+            "removed_by_name, transcript_status FROM ("
+            "  SELECT m.id, direction, content_type, content, status, m.created_at, "
             "  COALESCE(channel_metadata->>'internal', 'false') = 'true' AS is_internal, "
             "  COALESCE(channel_metadata->>'bot', 'false') = 'true' AS is_bot, "
             "  channel_metadata->'media'->>'has_media' AS has_media, "
-            "  channel_metadata->'media'->>'transcript_status' AS transcript_status "
-            "  FROM messages "
-            "  WHERE conversation_id = :conversation_id AND tenant_id = :tenant_id "
+            "  channel_metadata->'media'->>'transcript_status' AS transcript_status, "
+            "  channel_metadata->'media'->>'status' AS media_status, "
+            "  channel_metadata->'media'->>'removed_at' AS removed_at, "
+            "  u.full_name AS removed_by_name "
+            "  FROM messages m "
+            # Quem apagou a mídia: o id mora no JSONB, o nome vem do usuário (mesmo tenant).
+            "  LEFT JOIN users u ON u.tenant_id = m.tenant_id "
+            "   AND u.id::text = m.channel_metadata->'media'->>'removed_by' "
+            "  WHERE conversation_id = :conversation_id AND m.tenant_id = :tenant_id "
             # `id` como desempate: sem ele, mensagens de mesmo instante saíam em
             # ordem arbitrária E instável — a mesma conversa recarregada duas vezes
             # mostrava arranjos diferentes. As bolhas novas já nascem com instantes
             # distintos (clock_timestamp), mas o histórico gravado antes disso está
             # empatado para sempre, e estável é melhor que embaralhado.
-            "  ORDER BY created_at DESC, id DESC "
+            "  ORDER BY m.created_at DESC, m.id DESC "
             "  LIMIT :limit OFFSET :offset"
             ") sub ORDER BY created_at ASC, id ASC"
         ),
@@ -261,10 +268,13 @@ async def get_conversation_messages(
             # pendurar o JWT do atendente na query string. Ver services/media_links.py.
             "media_url": (
                 f"/media/{r.id}?{media_links.assinar('media', r.id, tenant_id)}"
-                if r.has_media == "true"
+                # Removida não tem arquivo; o link só renderia um ícone quebrado.
+                if r.has_media == "true" and r.media_status != "removed"
                 else None
             ),
             "transcript_status": r.transcript_status,
+            "media_removed_at": r.removed_at if r.media_status == "removed" else None,
+            "media_removed_by": r.removed_by_name,
         }
         for r in rows
     ]

@@ -35,6 +35,8 @@ export interface Message {
   is_bot?: boolean
   media_url?: string | null
   transcript_status?: string | null
+  media_removed_at?: string | null
+  media_removed_by?: string | null
 }
 
 export interface Conversation {
