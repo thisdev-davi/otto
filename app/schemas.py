@@ -649,3 +649,20 @@ class FluxoPassoSchema(BaseModel):
 
 class FluxoSimulacaoSchema(BaseModel):
     passos: list[FluxoPassoSchema] = []
+
+
+# Banco de mídia (`services/midia_recebida.py`). No FIM do arquivo, como os demais acréscimos.
+class MidiaRecebidaSchema(BaseModel):
+    message_id: UUID
+    conversation_id: UUID
+    content_type: str
+    legenda: str | None = None
+    mimetype: str | None = None
+    contato: str | None = None
+    telefone: str | None = None
+    created_at: datetime
+    media_url: str
+
+
+class MidiaRecebidaListSchema(BaseModel):
+    itens: list[MidiaRecebidaSchema]

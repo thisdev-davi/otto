@@ -11,13 +11,13 @@ o "como na foto" do cliente perde a referência e some a prova de que algo foi a
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services import audit, storage
+from app.services import audit, media_links, storage
 
 log = logging.getLogger("uvicorn.error")
 
@@ -76,3 +76,72 @@ async def remover(
                 "midia_recebida: arquivo da mensagem %s não foi apagado", message_id
             )
     return True
+
+
+# Tipos que entram no banco de mídia, no vocabulário do enum (`ContentType.name`).
+TIPOS = ("IMAGE", "STICKER", "VIDEO", "DOCUMENT", "AUDIO")
+
+
+async def listar(
+    db: AsyncSession,
+    tenant_id: UUID,
+    tipo: str = "IMAGE",
+    busca: str = "",
+    de: date | None = None,
+    ate: date | None = None,
+    limite: int = 60,
+    offset: int = 0,
+) -> list[dict]:
+    """Mídias recebidas e ainda guardadas, da mais nova para a mais antiga.
+
+    `busca` casa com o nome ou o telefone do contato. Só `status = 'stored'`: pendente
+    ainda não tem arquivo, indisponível nunca terá, e removida já foi.
+    """
+    # ponytail: varre as mensagens do tenant filtrando o JSONB. Um índice parcial
+    # (tenant_id, created_at) WHERE direction='INBOUND' resolve quando o volume pedir.
+    rows = await db.execute(
+        text(
+            "SELECT m.id, m.conversation_id, m.content_type, m.content, m.created_at, "
+            "  m.channel_metadata->'media'->>'mimetype' AS mimetype, "
+            "  ct.name AS contato, ct.phone AS telefone "
+            "FROM messages m "
+            "JOIN conversations c ON c.id = m.conversation_id AND c.tenant_id = m.tenant_id "
+            "JOIN contacts ct ON ct.id = c.contact_id AND ct.tenant_id = m.tenant_id "
+            "WHERE m.tenant_id = :tid AND m.direction = 'INBOUND' "
+            "  AND m.content_type = CAST(:tipo AS contenttype_enum) "
+            "  AND m.channel_metadata->'media'->>'status' = 'stored' "
+            "  AND (:busca = '' OR ct.name ILIKE :padrao OR ct.phone ILIKE :padrao) "
+            "  AND (CAST(:de AS date) IS NULL OR m.created_at >= CAST(:de AS date)) "
+            "  AND (CAST(:ate AS date) IS NULL "
+            "       OR m.created_at < CAST(:ate AS date) + interval '1 day') "
+            "ORDER BY m.created_at DESC, m.id DESC "
+            "LIMIT :limite OFFSET :offset"
+        ),
+        {
+            "tid": str(tenant_id),
+            "tipo": tipo,
+            "busca": busca,
+            # `%` e `_` digitados casam literalmente, não como curinga.
+            "padrao": "%"
+            + busca.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            + "%",
+            "de": de,
+            "ate": ate,
+            "limite": limite,
+            "offset": offset,
+        },
+    )
+    return [
+        {
+            "message_id": r.id,
+            "conversation_id": r.conversation_id,
+            "content_type": r.content_type.lower(),
+            "legenda": r.content,
+            "mimetype": r.mimetype,
+            "contato": r.contato,
+            "telefone": r.telefone,
+            "created_at": r.created_at,
+            "media_url": f"/media/{r.id}?{media_links.assinar('media', r.id, tenant_id)}",
+        }
+        for r in rows.fetchall()
+    ]

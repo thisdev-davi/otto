@@ -201,3 +201,39 @@ async def test_outro_tenant_nao_alcanca(cenario) -> None:
             db, uuid.uuid4(), cenario["recebida"]["id"], cenario["admin_id"]
         )
     assert cenario["recebida"]["path"].exists()
+
+
+async def test_banco_lista_so_o_que_o_cliente_mandou(client, cenario) -> None:
+    """Atendente vê o banco; a mídia enviada pela equipe não aparece."""
+    auth = await _token(client, cenario["agente_email"])
+    r = await client.get("/media", params={"tipo": "image"}, headers=auth)
+    assert r.status_code == 200
+    ids = [i["message_id"] for i in r.json()["itens"]]
+    assert ids == [str(cenario["recebida"]["id"])]
+    assert r.json()["itens"][0]["contato"] == "Cliente"
+    assert "sig=" in r.json()["itens"][0]["media_url"]
+
+
+async def test_banco_filtra_por_contato_e_tipo(client, cenario) -> None:
+    auth = await _token(client, cenario["agente_email"])
+    assert (
+        await client.get("/media", params={"busca": "ninguém"}, headers=auth)
+    ).json()["itens"] == []
+    assert (
+        await client.get("/media", params={"tipo": "sticker"}, headers=auth)
+    ).json()["itens"] == []
+    r = await client.get("/media", params={"tipo": "qualquer"}, headers=auth)
+    assert r.status_code == 422
+
+
+async def test_removida_sai_do_banco(client, cenario) -> None:
+    async with AsyncSessionLocal() as db:
+        await midia_recebida.remover(
+            db, cenario["tenant_id"], cenario["recebida"]["id"], cenario["admin_id"]
+        )
+    auth = await _token(client, cenario["agente_email"])
+    assert (await client.get("/media", headers=auth)).json()["itens"] == []
+
+
+async def test_banco_exige_login(client, cenario) -> None:
+    assert (await client.get("/media")).status_code == 401

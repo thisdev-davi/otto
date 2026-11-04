@@ -632,3 +632,22 @@ export interface FluxoPasso {
 export interface FluxoSimulacao {
   passos: FluxoPasso[]
 }
+
+// Banco de mídia: o que os clientes mandaram (`GET /media`). No FIM, como os demais acréscimos.
+export type TipoMidia = 'image' | 'sticker' | 'video' | 'document' | 'audio'
+
+export interface MidiaRecebida {
+  message_id: string
+  conversation_id: string
+  content_type: TipoMidia
+  legenda: string | null
+  mimetype: string | null
+  contato: string | null
+  telefone: string | null
+  created_at: string
+  media_url: string
+}
+
+export interface MidiaRecebidaList {
+  itens: MidiaRecebida[]
+}

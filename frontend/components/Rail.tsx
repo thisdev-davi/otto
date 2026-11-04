@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Inbox, CalendarDays, BarChart3, Settings2, LogOut, Sun, Moon, Monitor, Check, Menu } from 'lucide-react'
+import { Inbox, CalendarDays, Images, BarChart3, Settings2, LogOut, Sun, Moon, Monitor, Check, Menu } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme, type Theme } from '@/contexts/ThemeContext'
 import { Logo } from '@/components/Logo'
@@ -46,6 +46,7 @@ function useNavPrincipal() {
   return [
     { label: 'Inbox', href: '/inbox', Icon: Inbox, ativo: pathname.startsWith('/inbox') },
     { label: 'Agenda', href: '/agenda', Icon: CalendarDays, ativo: pathname.startsWith('/agenda') },
+    { label: 'Mídia', href: '/midia', Icon: Images, ativo: pathname.startsWith('/midia') },
     ...(isAdmin
       ? [
           { label: 'Relatórios', href: '/relatorios', Icon: BarChart3, ativo: pathname.startsWith('/relatorios') },

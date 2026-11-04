@@ -401,6 +401,20 @@ export const api = {
     removeFoto: (token: string, id: string) =>
       apiFetch<void>(`/espaco/fotos/${id}`, { method: 'DELETE', token }),
   },
+  // Banco de mídia. Ver `app/services/midia_recebida.py`.
+  midias: {
+    listar: (
+      token: string,
+      filtro: { tipo: import('@/types/api').TipoMidia; busca?: string; offset?: number }
+    ) => {
+      const q = new URLSearchParams({ tipo: filtro.tipo, offset: String(filtro.offset ?? 0) })
+      if (filtro.busca) q.set('busca', filtro.busca)
+      return apiFetch<import('@/types/api').MidiaRecebidaList>(`/media?${q}`, { token })
+    },
+    /** Apaga o arquivo; a mensagem fica na conversa como "mídia removida". Só admin. */
+    excluir: (token: string, messageId: string) =>
+      apiFetch<void>(`/media/${messageId}`, { method: 'DELETE', token }),
+  },
   contacts: {
     perfil: (token: string, contactId: string) =>
       apiFetch<import('@/types/api').ContactPerfil>(`/contacts/${contactId}`, { token }),

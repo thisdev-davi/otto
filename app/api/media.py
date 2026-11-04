@@ -10,7 +10,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.auth import TokenData, decode_token, require_admin
+from datetime import date
+
+from app.api.auth import TokenData, decode_token, get_current_user, require_admin
+from app.schemas import MidiaRecebidaListSchema, MidiaRecebidaSchema
 from app.core.database import get_session
 from app.services import media_links
 from app.services.attachments import mimetype_para_servir
@@ -22,6 +25,33 @@ router = APIRouter(prefix="/media", tags=["media"])
 _bearer = HTTPBearer(auto_error=False)
 
 TIPO = "media"
+
+
+@router.get("")
+async def listar_midias(
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    tipo: Annotated[str, Query()] = "image",
+    busca: Annotated[str, Query(max_length=80)] = "",
+    de: Annotated[date | None, Query()] = None,
+    ate: Annotated[date | None, Query()] = None,
+    limite: Annotated[int, Query(ge=1, le=120)] = 60,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> MidiaRecebidaListSchema:
+    """Banco de mídia: o que os clientes mandaram. Qualquer atendente vê; só admin exclui."""
+    if tipo.upper() not in midia_recebida.TIPOS:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+    itens = await midia_recebida.listar(
+        session,
+        current_user.tenant_id,
+        tipo.upper(),
+        busca.strip(),
+        de,
+        ate,
+        limite,
+        offset,
+    )
+    return MidiaRecebidaListSchema(itens=[MidiaRecebidaSchema(**i) for i in itens])
 
 
 @router.get("/{message_id}")
